@@ -1,0 +1,184 @@
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.login-left {
+  flex: 2.5; /* Making the background even wider than before */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  position: relative;
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .login-left {
+    display: block;
+  }
+}
+
+.login-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+.login-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background-color: #EBEBEB; /* Light gray from theme */
+  padding: 40px;
+  width: 100%;
+  max-width: 500px;
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.login-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+.login-logo {
+  flex-shrink: 0;
+  width: 65px;
+  height: auto;
+}
+
+.login-brand-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.login-brand-text h2 {
+  margin: 0;
+  color: #111827;
+  font-size: 24px;
+  font-weight: 800;
+  text-align: left;
+  line-height: 1.2;
+}
+
+.login-brand-text h3 {
+  margin: 4px 0 0 0;
+  color: #DC5F00;
+  font-size: 15px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-align: left;
+  line-height: 1.2;
+}
+
+.login-subtitle {
+  margin: 16px 0 0 0;
+  color: #6b7280;
+  font-size: 15px;
+}
+
+.login-error {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  margin-bottom: 20px;
+  text-align: center;
+  border: 1px solid #f87171;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.form-group input {
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  background-color: #ffffff; /* Explicitly set to white */
+  color: #111827; /* Dark text for readability */
+  transition: border-color 0.2s;
+  outline: none;
+}
+
+.form-group input:focus {
+  border-color: #E26801; /* Orange from theme */
+  box-shadow: 0 0 0 3px rgba(226, 104, 1, 0.2);
+}
+
+.form-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+
+.remember-me {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #4b5563;
+  cursor: pointer;
+}
+
+.forgot-password {
+  color: #DC5F00;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.forgot-password:hover {
+  text-decoration: underline;
+}
+
+.login-button {
+  background-color: #DC5F00;
+  color: white;
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-top: 10px;
+}
+
+.login-button:hover:not(:disabled) {
+  background-color: #B34D00;
+}
+
+.login-button:disabled {
+  background-color: #F0A570;
+  cursor: not-allowed;
+}
