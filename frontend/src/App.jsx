@@ -4,6 +4,8 @@ import Login from './pages/Login'
 import MainLayout from './layouts/MainLayout'
 import PlaceholderPage from './pages/PlaceholderPage'
 import AccountManagement from './pages/AccountManagement'
+import EventManagement from './pages/EventManagement'
+import Events from './pages/Events'
 import './App.css'
 
 function App() {
@@ -31,7 +33,7 @@ function App() {
             <Route path="/dashboard" element={<PlaceholderPage title={`${userRole} Dashboard`} />} />
             
             {/* Student & Shared Routes */}
-            <Route path="/events" element={<PlaceholderPage title="Events View" />} />
+            <Route path="/events" element={<Events />} />
             <Route path="/academic-tracker" element={<PlaceholderPage title="Academic Tracker" />} />
             <Route path="/achievements" element={<PlaceholderPage title="My Achievements" />} />
             <Route path="/violations" element={<PlaceholderPage title="My Violations" />} />
@@ -41,7 +43,7 @@ function App() {
             {/* Faculty & Admin Routes */}
             <Route path="/course-management" element={<PlaceholderPage title="Course Management" />} />
             <Route path="/student-management" element={<PlaceholderPage title="Student Management" />} />
-            <Route path="/event-management" element={<PlaceholderPage title="Event Management" />} />
+            <Route path="/event-management" element={<EventManagement />} />
             <Route path="/violation-management" element={<PlaceholderPage title="Violation Management" />} />
             <Route path="/medical-records-management" element={<PlaceholderPage title="Medical Records Management" />} />
             <Route path="/academic-records-management" element={<PlaceholderPage title="Academic Records Management" />} />

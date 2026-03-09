@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './Login.css';
 import logo from '../assets/ccs-logo.png';
+import connectsLogo from '../assets/ConneCts.png';
 import background from '../assets/ccs-background.png';
 
 const Login = ({ onLogin }) => {
@@ -74,10 +75,12 @@ const Login = ({ onLogin }) => {
               <h3>College of Computing Studies</h3>
             </div>
           </div>
-          <p className="login-subtitle">Sign in to your account</p>
+          <img src={connectsLogo} alt="ConneCtS" className="connects-logo" />
         </div>
 
         {error && <div className="login-error">{error}</div>}
+
+        <h2 className="login-title">Login</h2>
 
         <form onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
@@ -117,7 +120,7 @@ const Login = ({ onLogin }) => {
           </div>
 
           <button type="submit" className="login-button" disabled={isLoading}>
-            {isLoading ? 'Signing in...' : 'Sign In'}
+            {isLoading ? 'Logging in...' : 'Login'}
           </button>
         </form>
       </div>

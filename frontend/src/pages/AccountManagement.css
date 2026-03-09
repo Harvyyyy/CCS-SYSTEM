@@ -94,6 +94,12 @@ body.dark-theme .search-box input {
 
 body.dark-theme .filter-box select {
   color: #EBEBEB;
+  background-color: #1e1e1e;
+}
+
+body.dark-theme .filter-box select option {
+  background-color: #1e1e1e;
+  color: #EBEBEB;
 }
 
 /* Table Container */

@@ -1,0 +1,248 @@
+.event-management-container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.event-management-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.event-management-header h2 {
+  color: var(--text-dark);
+  font-size: 24px;
+  margin: 0;
+}
+
+.primary-btn {
+  background-color: var(--primary-color);
+  color: var(--text-white);
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.primary-btn:hover {
+  background-color: var(--primary-hover);
+}
+
+.secondary-btn {
+  background-color: var(--border-color);
+  color: var(--text-medium);
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.secondary-btn:hover {
+  background-color: var(--border-focus);
+}
+
+.event-list {
+  background-color: var(--bg-surface);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.no-events {
+  padding: 40px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 16px;
+}
+
+.event-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.event-table th,
+.event-table td {
+  padding: 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.event-table th {
+  background-color: var(--bg-subtle);
+  font-weight: 500;
+  color: var(--text-medium);
+  font-size: 14px;
+}
+
+.event-table td {
+  font-size: 14px;
+  color: var(--text-dark);
+}
+
+.event-desc-preview {
+  color: var(--text-muted);
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.event-time {
+  color: var(--text-muted);
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.participant-count {
+  font-weight: 500;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status-badge.upcoming {
+  background-color: var(--info-bg);
+  color: var(--info-text);
+}
+
+.status-badge.ongoing {
+  background-color: var(--warning-bg);
+  color: var(--warning-text);
+}
+
+.status-badge.completed {
+  background-color: var(--success-bg);
+  color: var(--success-text);
+}
+
+.actions-cell {
+  display: flex;
+  gap: 8px;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.icon-btn:hover {
+  background-color: var(--bg-muted);
+}
+
+.edit-btn { color: var(--info-text); }
+.status-btn { color: var(--warning-text); }
+.delete-btn { color: var(--error-text); }
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.event-modal {
+  background-color: var(--bg-surface);
+  border-radius: 8px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  overflow-y: auto;
+  max-height: 90vh;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: var(--text-dark);
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--text-muted);
+}
+
+.event-form {
+  padding: 24px;
+}
+
+.event-form-group {
+  margin-bottom: 16px;
+}
+
+.event-form-row {
+  display: flex;
+  gap: 16px;
+}
+
+.event-form-row .event-form-group {
+  flex: 1;
+}
+
+.event-form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--text-medium);
+}
+
+.event-form-group input,
+.event-form-group textarea,
+.event-form-group select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-focus);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 14px;
+  box-sizing: border-box;
+  background-color: var(--bg-main);
+  color: var(--text-dark);
+}
+
+.event-form-group input:focus,
+.event-form-group textarea:focus,
+.event-form-group select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(220, 95, 0, 0.2);
+}
+
+.event-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
