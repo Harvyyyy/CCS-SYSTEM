@@ -10,6 +10,7 @@ import MyMedicalRecords from './pages/MyMedicalRecords'
 import Events from './pages/Events'
 import AcademicTracker from './pages/AcademicTracker'
 import CourseManagement from './pages/CourseManagement'
+import StudentManagement from './pages/StudentManagement'
 import './App.css'
 
 function App() {
@@ -58,7 +59,7 @@ function App() {
             
             {/* Faculty & Admin Routes */}
             <Route path="/course-management" element={<CourseManagement />} />
-            <Route path="/student-management" element={<PlaceholderPage title="Student Management" />} />
+            <Route path="/student-management" element={<StudentManagement />} />
             <Route path="/event-management" element={<EventManagement />} />
             <Route path="/violation-management" element={<PlaceholderPage title="Violation Management" />} />
             <Route path="/medical-records-management" element={<MedicalRecordsManagement />} />
