@@ -54,12 +54,20 @@ const Events = () => {
     try {
       const storedEvents = localStorage.getItem('ccs_events');
       if (storedEvents) {
-        return JSON.parse(storedEvents);
-      } else {
-        localStorage.setItem('ccs_events', JSON.stringify(mockEvents));
-        return mockEvents;
+        const parsedEvents = JSON.parse(storedEvents);
+        // Ensure mock events are always injected if missing (for demonstration purposes)
+        const hasMockData = parsedEvents.some(ev => ev.id === 'evt_1');
+        if (!hasMockData) {
+          const mergedEvents = [...mockEvents, ...parsedEvents];
+          localStorage.setItem('ccs_events', JSON.stringify(mergedEvents));
+          return mergedEvents;
+        }
+        return parsedEvents;
       }
+      localStorage.setItem('ccs_events', JSON.stringify(mockEvents));
+      return mockEvents;
     } catch {
+      localStorage.setItem('ccs_events', JSON.stringify(mockEvents));
       return mockEvents;
     }
   });

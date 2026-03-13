@@ -57,12 +57,20 @@ const EventManagement = () => {
     try {
       const storedEvents = localStorage.getItem('ccs_events');
       if (storedEvents) {
-        return JSON.parse(storedEvents);
-      } else {
-        localStorage.setItem('ccs_events', JSON.stringify(mockEvents));
-        return mockEvents;
+        const parsedEvents = JSON.parse(storedEvents);
+        // Ensure mock events are always injected if missing (for demonstration purposes)
+        const hasMockData = parsedEvents.some(ev => ev.id === 'evt_1');
+        if (!hasMockData) {
+          const mergedEvents = [...mockEvents, ...parsedEvents];
+          localStorage.setItem('ccs_events', JSON.stringify(mergedEvents));
+          return mergedEvents;
+        }
+        return parsedEvents;
       }
+      localStorage.setItem('ccs_events', JSON.stringify(mockEvents));
+      return mockEvents;
     } catch {
+      localStorage.setItem('ccs_events', JSON.stringify(mockEvents));
       return mockEvents;
     }
   });
@@ -173,10 +181,12 @@ const EventManagement = () => {
           <h2>Event Management</h2>
           <p>Create, track, and manage all events for the campus easily.</p>
         </div>
-        <button className="primary-btn add-btn" onClick={() => openModal()}>
-          <Plus size={18} />
-          <span>Create Event</span>
-        </button>
+        <div className="admin-header-actions">
+          <button className="primary-btn add-btn" onClick={() => openModal()}>
+            <Plus size={18} />
+            <span>Create Event</span>
+          </button>
+        </div>
       </div>
 
       <div className="admin-stats-grid">
