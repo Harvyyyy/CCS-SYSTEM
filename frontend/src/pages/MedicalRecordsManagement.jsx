@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { 
   Search, Filter, Plus, X, Edit, Trash2, Activity,
-  FileText, CheckCircle, AlertTriangle, Clock, User
+  FileText, CheckCircle, AlertTriangle, Clock, User, Download, UploadCloud
 } from 'lucide-react';
 import './MedicalRecordsManagement.css';
 
@@ -32,6 +32,9 @@ const MedicalRecordsManagement = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDocsModalOpen, setIsDocsModalOpen] = useState(false);
+  const [currentDocs, setCurrentDocs] = useState([]);
+  const [selectedStudentName, setSelectedStudentName] = useState('');
   const [formData, setFormData] = useState({
     id: null,
     studentId: '',
@@ -70,6 +73,26 @@ const MedicalRecordsManagement = () => {
   };
 
   const closeModal = () => setIsModalOpen(false);
+
+  const openDocsModal = (record) => {
+    try {
+      const storedDocs = localStorage.getItem('ccs_medical_documents');
+      if (storedDocs) {
+        const allDocs = JSON.parse(storedDocs);
+        const myDocs = allDocs.filter(d => d.studentId === record.studentId);
+        setCurrentDocs(myDocs);
+      } else {
+        setCurrentDocs([]);
+      }
+    } catch (err) {
+      console.error('Error reading documents:', err);
+      setCurrentDocs([]);
+    }
+    setSelectedStudentName(record.name);
+    setIsDocsModalOpen(true);
+  };
+
+  const closeDocsModal = () => setIsDocsModalOpen(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -238,10 +261,13 @@ const MedicalRecordsManagement = () => {
                   </td>
                   <td>
                     <div className="actions-cell">
+                      <button className="table-action-btn view" title="View Documents" onClick={() => openDocsModal(r)}>
+                        <FileText size={16} />
+                      </button>
                       <button className="table-action-btn edit" title="Edit Record" onClick={() => openModal(r)}>
                         <Edit size={16} />
                       </button>
-                      <button className="tableaction-btn delete" title="Delete Record" onClick={() => handleDelete(r.id)} style={{color: '#EF4444'}}>
+                      <button className="table-action-btn delete" title="Delete Record" onClick={() => handleDelete(r.id)} style={{color: '#EF4444'}}>
                         <Trash2 size={16} />
                       </button>
                     </div>
@@ -314,6 +340,48 @@ const MedicalRecordsManagement = () => {
                 <button type="submit" className="btn-primary">{formData.id ? 'Save Changes' : 'Add Record'}</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* View Documents Modal */}
+      {isDocsModalOpen && (
+        <div className="medical-modal-overlay">
+          <div className="medical-modal-box">
+            <div className="medical-modal-header">
+              <h3>Documents: {selectedStudentName}</h3>
+              <button className="modal-close-btn" onClick={closeDocsModal}>
+                <X size={24} />
+              </button>
+            </div>
+            <div className="medical-docs-body">
+              {currentDocs.length === 0 ? (
+                <div className="docs-empty">
+                  <UploadCloud size={32} className="empty-icon-docs" />
+                  <p>No documents uploaded by this student.</p>
+                </div>
+              ) : (
+                <div className="docs-list">
+                  {currentDocs.map(doc => (
+                    <div key={doc.id} className="doc-item">
+                      <div className="doc-info">
+                        <FileText size={20} className="doc-icon" />
+                        <div className="doc-details">
+                          <span className="doc-name">{doc.fileName}</span>
+                          <span className="doc-meta">{doc.uploadDate} • {doc.fileSize}</span>
+                        </div>
+                      </div>
+                      <button className="doc-download-btn" title="Download">
+                        <Download size={18} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="medical-form-actions" style={{ padding: '16px 24px', borderTop: '1px solid #e2e8f0', marginTop: '0' }}>
+              <button type="button" className="btn-secondary" onClick={closeDocsModal} style={{ marginLeft: 'auto' }}>Close</button>
+            </div>
           </div>
         </div>
       )}

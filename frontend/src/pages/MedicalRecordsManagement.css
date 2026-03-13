@@ -476,6 +476,92 @@
   background-color: var(--primary-hover, #4338CA);
 }
 
+/* Docs Modal Extensions */
+.medical-docs-body {
+  padding: 24px;
+  min-height: 150px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.docs-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  padding: 32px 0;
+  text-align: center;
+}
+
+.empty-icon-docs {
+  color: #cbd5e1;
+  margin-bottom: 12px;
+}
+
+.docs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.doc-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background-color: var(--bg-subtle, #F9FAFB);
+  border: 1px solid var(--border-color, #E5E7EB);
+  border-radius: 8px;
+  transition: background-color 0.2s;
+}
+
+.doc-item:hover { background-color: var(--border-color, #e5e7eb); }
+
+.doc-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.doc-icon {
+  color: var(--primary-color, #4F46E5);
+}
+
+.doc-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.doc-name {
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--text-dark, #111827);
+}
+
+.doc-meta {
+  font-size: 12px;
+  color: var(--text-muted, #6B7280);
+}
+
+.doc-download-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted, #6B7280);
+  padding: 6px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.doc-download-btn:hover {
+  background: var(--border-color, #e5e7eb);
+  color: var(--text-dark, #111827);
+}
+
+.table-action-btn.view:hover { background-color: #ECFDF5; color: #059669; }
+
 @media (max-width: 768px) {
   .medical-form-row {
     flex-direction: column;

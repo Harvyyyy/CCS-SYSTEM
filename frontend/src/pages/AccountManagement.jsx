@@ -8,7 +8,11 @@ import {
   X,
   CheckCircle2,
   AlertCircle,
-  RefreshCw
+  RefreshCw,
+  User,
+  Users,
+  ShieldAlert,
+  GraduationCap
 } from 'lucide-react';
 import './AccountManagement.css';
 
@@ -51,6 +55,12 @@ const AccountManagement = () => {
     role: 'Student',
     status: 'Active'
   });
+
+  // Derived stats
+  const totalAccounts = accounts.length;
+  const activeAccounts = accounts.filter(a => a.status === 'Active').length;
+  const adminAccounts = accounts.filter(a => a.role === 'Admin').length;
+  const facultyAccounts = accounts.filter(a => a.role === 'Faculty').length;
 
   // Derived filtered data
   const filteredAccounts = accounts.filter(acc => {
@@ -142,25 +152,66 @@ const AccountManagement = () => {
         </button>
       </div>
 
-      <div className="controls-bar">
-        <div className="search-box">
-          <Search size={18} className="search-icon" />
-          <input 
-            type="text" 
-            placeholder="Search by ID, Name or Email..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      <div className="stats-container">
+        <div className="stat-card">
+          <div className="stat-icon-wrapper blue-icon">
+            <Users size={24} />
+          </div>
+          <div className="stat-info">
+            <div className="stat-value">{totalAccounts}</div>
+            <div className="stat-label">Total Accounts</div>
+          </div>
         </div>
-        
-        <div className="filter-box">
-          <Filter size={18} className="filter-icon" />
-          <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
-            <option value="All">All Roles</option>
-            <option value="Admin">Admin</option>
-            <option value="Faculty">Faculty</option>
-            <option value="Student">Student</option>
-          </select>
+        <div className="stat-card">
+          <div className="stat-icon-wrapper green-icon">
+            <User size={24} />
+          </div>
+          <div className="stat-info">
+            <div className="stat-value text-success">{activeAccounts}</div>
+            <div className="stat-label">Active Users</div>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon-wrapper purple-icon">
+            <ShieldAlert size={24} />
+          </div>
+          <div className="stat-info">
+            <div className="stat-value text-admin">{adminAccounts}</div>
+            <div className="stat-label">Administrators</div>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon-wrapper orange-icon">
+            <GraduationCap size={24} />
+          </div>
+          <div className="stat-info">
+            <div className="stat-value text-faculty">{facultyAccounts}</div>
+            <div className="stat-label">Faculty Members</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="controls-bar">
+        <div className="controls-left">
+          <div className="search-box">
+            <Search size={18} className="search-icon" />
+            <input 
+              type="text" 
+              placeholder="Search by ID, Name or Email..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          
+          <div className="filter-box">
+            <Filter size={18} className="filter-icon" />
+            <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
+              <option value="All">All Roles</option>
+              <option value="Admin">Admin</option>
+              <option value="Faculty">Faculty</option>
+              <option value="Student">Student</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -181,7 +232,14 @@ const AccountManagement = () => {
             {filteredAccounts.length > 0 ? (
               filteredAccounts.map((acc) => (
                 <tr key={acc.id}>
-                  <td className="font-medium">{acc.userId}</td>
+                  <td className="font-medium">
+                    <div className="user-id-cell">
+                      <div className="avatar-circle">
+                        {acc.fullName.charAt(0)}
+                      </div>
+                      {acc.userId}
+                    </div>
+                  </td>
                   <td>{acc.fullName}</td>
                   <td>{acc.email}</td>
                   <td className="password-cell">{acc.password === 'password123' ? acc.password : '********'}</td>
@@ -210,8 +268,11 @@ const AccountManagement = () => {
               <tr>
                 <td colSpan="7" className="empty-state">
                   <div className="empty-state-content">
-                    <Search size={40} className="empty-icon" />
-                    <p>No accounts found matching your criteria.</p>
+                    <div className="empty-state-icon-wrapper">
+                      <Search size={32} className="empty-icon" />
+                    </div>
+                    <h3>No accounts found</h3>
+                    <p>We couldn't find any accounts matching your current filters.</p>
                     <button className="secondary-btn" onClick={() => { setSearchTerm(''); setRoleFilter('All'); }}>Clear Filters</button>
                   </div>
                 </td>
