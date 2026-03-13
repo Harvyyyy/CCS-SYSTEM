@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Plus, Edit2, Trash2, X, Filter, Users } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, X, Filter, Users, Eye } from 'lucide-react';
 import './StudentManagement.css';
 
 const DEFAULT_FORM_DATA = {
@@ -165,6 +165,8 @@ const StudentManagement = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState(null);
   const [editingStudent, setEditingStudent] = useState(null);
 
   const [formData, setFormData] = useState(DEFAULT_FORM_DATA);
@@ -193,6 +195,16 @@ const StudentManagement = () => {
   const closeModal = () => {
     setIsModalOpen(false);
     setEditingStudent(null);
+  };
+
+  const openDetailModal = (student) => {
+    setSelectedStudent(student);
+    setIsDetailModalOpen(true);
+  };
+
+  const closeDetailModal = () => {
+    setIsDetailModalOpen(false);
+    setSelectedStudent(null);
   };
 
   const handleSubmit = (e) => {
@@ -325,6 +337,9 @@ const StudentManagement = () => {
                   </td>
                   <td className="sm-actions-cell">
                     <div className="sm-actions-group">
+                      <button className="sm-action-btn view" onClick={() => openDetailModal(student)} title="View Details">
+                        <Eye size={16} />
+                      </button>
                       <button className="sm-action-btn edit" onClick={() => openModal(student)} title="Edit">
                         <Edit2 size={16} />
                       </button>
@@ -586,6 +601,65 @@ const StudentManagement = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {isDetailModalOpen && selectedStudent && (
+        <div className="sm-detail-overlay" onClick={closeDetailModal}>
+          <div className="sm-detail-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="sm-detail-header">
+              <div>
+                <h3>Student Details</h3>
+                <p>{selectedStudent.studentNo}</p>
+              </div>
+              <button className="close-btn" onClick={closeDetailModal}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="sm-detail-body">
+              <div className="sm-detail-section">
+                <h4>Basic Information</h4>
+                <div className="sm-detail-grid">
+                  <div className="sm-detail-item"><span>Full Name</span><strong>{`${selectedStudent.lastName}, ${selectedStudent.firstName}${selectedStudent.middleName ? ` ${selectedStudent.middleName}` : ''}`}</strong></div>
+                  <div className="sm-detail-item"><span>Gender</span><strong>{selectedStudent.gender || 'N/A'}</strong></div>
+                  <div className="sm-detail-item"><span>Student Number</span><strong>{selectedStudent.studentNo || 'N/A'}</strong></div>
+                  <div className="sm-detail-item"><span>Year Graduated</span><strong>{selectedStudent.yearGraduated || 'N/A'}</strong></div>
+                </div>
+              </div>
+
+              <div className="sm-detail-section">
+                <h4>Academic Information</h4>
+                <div className="sm-detail-grid">
+                  <div className="sm-detail-item"><span>Program</span><strong>{selectedStudent.program || 'N/A'}</strong></div>
+                  <div className="sm-detail-item"><span>Year Level</span><strong>{selectedStudent.yearLevel || 'N/A'}</strong></div>
+                  <div className="sm-detail-item"><span>Section</span><strong>{selectedStudent.section || 'N/A'}</strong></div>
+                  <div className="sm-detail-item"><span>Academic Track</span><strong>{selectedStudent.academicTrack || 'N/A'}</strong></div>
+                  <div className="sm-detail-item"><span>Academic Status</span><strong>{selectedStudent.academicStatus || 'N/A'}</strong></div>
+                </div>
+              </div>
+
+              <div className="sm-detail-section">
+                <h4>Physical & Contact</h4>
+                <div className="sm-detail-grid">
+                  <div className="sm-detail-item"><span>Height</span><strong>{selectedStudent.height ? `${selectedStudent.height} cm` : 'N/A'}</strong></div>
+                  <div className="sm-detail-item"><span>Weight</span><strong>{selectedStudent.weight ? `${selectedStudent.weight} kg` : 'N/A'}</strong></div>
+                  <div className="sm-detail-item"><span>Email</span><strong>{selectedStudent.email || 'N/A'}</strong></div>
+                  <div className="sm-detail-item"><span>Contact Number</span><strong>{selectedStudent.contactNumber || 'N/A'}</strong></div>
+                  <div className="sm-detail-item"><span>Emergency Contact Name</span><strong>{selectedStudent.emergencyName || 'N/A'}</strong></div>
+                  <div className="sm-detail-item"><span>Emergency Contact Number</span><strong>{selectedStudent.emergencyNumber || 'N/A'}</strong></div>
+                  <div className="sm-detail-item"><span>Emergency Relation</span><strong>{selectedStudent.emergencyRelation || 'N/A'}</strong></div>
+                  <div className="sm-detail-item"><span>Profile Image Path</span><strong>{selectedStudent.profileImage || 'N/A'}</strong></div>
+                </div>
+              </div>
+            </div>
+
+            <div className="sm-detail-footer">
+              <button type="button" className="btn-cancel" onClick={closeDetailModal}>
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
