@@ -1,0 +1,146 @@
+.academic-tracker-container {
+  padding: 40px;
+  background-color: #e5e7eb; /* Matches the gray background of the image */
+  min-height: calc(100vh - 60px);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.page-title {
+  text-align: center;
+  font-size: 28px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 30px;
+}
+
+.mb-40 {
+  margin-bottom: 40px;
+}
+
+.at-card {
+  background-color: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  margin-bottom: 30px;
+}
+
+.at-card-header {
+  background-color: #6a7684; /* Matches the header color in images */
+  color: white;
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.at-year-label {
+  font-weight: 600;
+}
+
+.at-sem-label {
+  font-size: 15px;
+}
+
+.btn-guidelines {
+  background-color: white;
+  color: #333;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.at-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: center;
+}
+
+.at-table th {
+  padding: 16px;
+  font-weight: 600;
+  color: #334155;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.at-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #334155;
+  font-size: 15px;
+}
+
+/* Specific alignment for courses table */
+.at-table td:nth-child(1),
+.at-table td:nth-child(2),
+.at-table th:nth-child(1),
+.at-table th:nth-child(2) {
+  text-align: left;
+}
+
+/* Retention Table overrides */
+.retention-table th,
+.retention-table td {
+  text-align: center;
+}
+
+.retention-table td:nth-child(1),
+.retention-table th:nth-child(1) {
+  text-align: left;
+}
+
+.btn-none {
+  background-color: #e2e8f0;
+  border: none;
+  padding: 6px 24px;
+  border-radius: 20px;
+  color: #64748b;
+  font-size: 13px;
+  cursor: default;
+}
+
+.at-status-badge {
+  display: inline-block;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  background-color: #e2e8f0;
+}
+
+.at-status-badge.passed {
+  background-color: #d1fae5; /* Light green from image */
+  color: #065f46;
+}
+
+tfoot {
+  background-color: #ffffff;
+}
+
+tfoot td {
+  border-top: 1px solid #e2e8f0;
+  border-bottom: none !important;
+  font-size: 16px;
+}
+
+.text-right {
+  text-align: right !important;
+  padding-right: 40px !important;
+}
+
+.fw-bold {
+  font-weight: 700 !important;
+}
+
+.empty-message {
+  text-align: center;
+  font-size: 18px;
+  color: #64748b;
+  margin-top: 40px;
+}

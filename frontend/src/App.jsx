@@ -8,6 +8,8 @@ import EventManagement from './pages/EventManagement'
 import MedicalRecordsManagement from './pages/MedicalRecordsManagement'
 import MyMedicalRecords from './pages/MyMedicalRecords'
 import Events from './pages/Events'
+import AcademicTracker from './pages/AcademicTracker'
+import CourseManagement from './pages/CourseManagement'
 import './App.css'
 
 function App() {
@@ -48,14 +50,14 @@ function App() {
             
             {/* Student & Shared Routes */}
             <Route path="/events" element={<Events />} />
-            <Route path="/academic-tracker" element={<PlaceholderPage title="Academic Tracker" />} />
+            <Route path="/academic-tracker" element={<AcademicTracker />} />
             <Route path="/achievements" element={<PlaceholderPage title="My Achievements" />} />
             <Route path="/violations" element={<PlaceholderPage title="My Violations" />} />
             <Route path="/medical-records" element={<MyMedicalRecords />} />
             <Route path="/profile" element={<PlaceholderPage title="My Profile" />} />
             
             {/* Faculty & Admin Routes */}
-            <Route path="/course-management" element={<PlaceholderPage title="Course Management" />} />
+            <Route path="/course-management" element={<CourseManagement />} />
             <Route path="/student-management" element={<PlaceholderPage title="Student Management" />} />
             <Route path="/event-management" element={<EventManagement />} />
             <Route path="/violation-management" element={<PlaceholderPage title="Violation Management" />} />
