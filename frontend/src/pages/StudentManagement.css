@@ -225,6 +225,15 @@
   background-color: #eff6ff;
 }
 
+.sm-action-btn.view {
+  color: #0f766e;
+  background-color: #ecfeff;
+}
+
+.sm-action-btn.view:hover {
+  background-color: #cffafe;
+}
+
 .sm-action-btn.edit:hover {
   background-color: #dbeafe;
 }
@@ -247,6 +256,101 @@
   justify-content: center;
   align-items: center;
   gap: 8px;
+}
+
+.sm-detail-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(15, 23, 42, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  padding: 20px;
+}
+
+.sm-detail-modal {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 760px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.sm-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.sm-detail-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #0f172a;
+}
+
+.sm-detail-header p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.sm-detail-body {
+  padding: 20px 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.sm-detail-section h4 {
+  margin: 0 0 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.sm-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+}
+
+.sm-detail-item {
+  padding: 10px 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.sm-detail-item span {
+  display: block;
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.sm-detail-item strong {
+  font-size: 14px;
+  color: #0f172a;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.sm-detail-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px 24px;
+  border-top: 1px solid #e2e8f0;
 }
 
 .modal-overlay {
@@ -397,17 +501,21 @@
     gap: 12px;
   }
 
-  .controls-bar {
+  .sm-controls-bar {
     flex-direction: column;
   }
 
-  .search-box {
+  .sm-search-box {
     max-width: 100%;
   }
 
-  .filter-box {
+  .sm-filter-box {
     width: 100%;
     justify-content: space-between;
+  }
+
+  .sm-detail-grid {
+    grid-template-columns: 1fr;
   }
 
   .form-row {
