@@ -46,7 +46,6 @@ const ROLE_MENUS = {
     { title: 'My Profile', path: '/profile', icon: UserCircle },
     { title: 'Violation Management', path: '/violation-management', icon: ShieldAlert },
     { title: 'Medical Records Management', path: '/medical-records-management', icon: HeartPulse },
-    { title: 'Academic Records Management', path: '/academic-records-management', icon: FileCheck },
   ],
   Admin: [
     { title: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
@@ -57,7 +56,6 @@ const ROLE_MENUS = {
     { title: 'Event Management', path: '/event-management', icon: Calendar },
     { title: 'Violation Management', path: '/violation-management', icon: ShieldAlert },
     { title: 'Medical Records Management', path: '/medical-records-management', icon: HeartPulse },
-    { title: 'Academic Records Management', path: '/academic-records-management', icon: FileCheck },
     { title: 'Account Management', path: '/account-management', icon: Settings },
   ]
 };

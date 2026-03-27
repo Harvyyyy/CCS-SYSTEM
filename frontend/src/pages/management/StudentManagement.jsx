@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { Search, Plus, Edit2, Trash2, X, Filter, Users, Eye, LayoutGrid, List, BookOpen, Calendar as CalendarIcon, Mail, Phone, Code } from 'lucide-react';
 import './StudentManagement.css';
+import MyProfile from '../student/MyProfile';
 
 const DEFAULT_FORM_DATA = {
-  studentNo: '',
   firstName: '',
   middleName: '',
   lastName: '',
@@ -818,53 +818,11 @@ const StudentManagement = () => {
               </button>
             </div>
 
-            <div className="sm-detail-body">
-              <div className="sm-detail-section">
-                <h4>Basic Information</h4>
-                <div className="sm-detail-grid">
-                  <div className="sm-detail-item"><span>Full Name</span><strong>{`${selectedStudent.lastName}, ${selectedStudent.firstName}${selectedStudent.middleName ? ` ${selectedStudent.middleName}` : ''}`}</strong></div>
-                  <div className="sm-detail-item"><span>Gender</span><strong>{selectedStudent.gender || 'N/A'}</strong></div>
-                  <div className="sm-detail-item"><span>Student Number</span><strong>{selectedStudent.studentNo || 'N/A'}</strong></div>
-                  <div className="sm-detail-item"><span>Year Graduated</span><strong>{selectedStudent.yearGraduated || 'N/A'}</strong></div>
-                </div>
+<div className="sm-detail-body">
+                <MyProfile studentData={selectedStudent} readOnly={true} />
               </div>
 
-              <div className="sm-detail-section">
-                <h4>Academic Information</h4>
-                <div className="sm-detail-grid">
-                  <div className="sm-detail-item"><span>Program</span><strong>{selectedStudent.program || 'N/A'}</strong></div>
-                  <div className="sm-detail-item"><span>Year Level</span><strong>{selectedStudent.yearLevel || 'N/A'}</strong></div>
-                  <div className="sm-detail-item"><span>Section</span><strong>{selectedStudent.section || 'N/A'}</strong></div>
-                  <div className="sm-detail-item"><span>Academic Track</span><strong>{selectedStudent.academicTrack || 'N/A'}</strong></div>
-                  <div className="sm-detail-item"><span>Academic Status</span><strong>{selectedStudent.academicStatus || 'N/A'}</strong></div>
-                </div>
-              </div>
-
-              <div className="sm-detail-section">
-                <h4>Physical & Contact</h4>
-                <div className="sm-detail-grid">
-                  <div className="sm-detail-item"><span>Height</span><strong>{selectedStudent.height ? `${selectedStudent.height} cm` : 'N/A'}</strong></div>
-                  <div className="sm-detail-item"><span>Weight</span><strong>{selectedStudent.weight ? `${selectedStudent.weight} kg` : 'N/A'}</strong></div>
-                  <div className="sm-detail-item"><span>Email</span><strong>{selectedStudent.email || 'N/A'}</strong></div>
-                  <div className="sm-detail-item"><span>Contact Number</span><strong>{selectedStudent.contactNumber || 'N/A'}</strong></div>
-                  <div className="sm-detail-item"><span>Emergency Contact Name</span><strong>{selectedStudent.emergencyName || 'N/A'}</strong></div>
-                  <div className="sm-detail-item"><span>Emergency Contact Number</span><strong>{selectedStudent.emergencyNumber || 'N/A'}</strong></div>
-                  <div className="sm-detail-item"><span>Emergency Relation</span><strong>{selectedStudent.emergencyRelation || 'N/A'}</strong></div>
-                  <div className="sm-detail-item"><span>Profile Image Path</span><strong>{selectedStudent.profileImage || 'N/A'}</strong></div>
-                </div>
-              </div>
-
-              <div className="sm-detail-section">
-                <h4>Skills, Interests & Achievements</h4>
-                <div className="sm-detail-grid">
-                  <div className="sm-detail-item" style={{ gridColumn: '1 / -1' }}><span>Achievements</span><strong>{selectedStudent.achievements || 'None recorded'}</strong></div>
-                  <div className="sm-detail-item"><span>Skills</span><strong>{selectedStudent.skills || 'None recorded'}</strong></div>
-                  <div className="sm-detail-item"><span>Interests</span><strong>{selectedStudent.interests || 'None recorded'}</strong></div>
-                </div>
-              </div>
-            </div>
-
-            <div className="sm-detail-footer">
+              <div className="sm-detail-footer">
               <button type="button" className="btn-cancel" onClick={closeDetailModal}>
                 Close
               </button>
@@ -877,4 +835,5 @@ const StudentManagement = () => {
 };
 
 export default StudentManagement;
+
 

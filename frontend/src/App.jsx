@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Login from './pages/auth/Login'
 import MainLayout from './layouts/MainLayout'
 import PlaceholderPage from './pages/shared/PlaceholderPage'
+import Dashboard from './pages/dashboard/Dashboard'
 import MyProfile from './pages/student/MyProfile'
 import AccountManagement from './pages/management/AccountManagement'
 import EventManagement from './pages/management/EventManagement'
@@ -10,6 +11,7 @@ import MedicalRecordsManagement from './pages/management/MedicalRecordsManagemen
 import MyMedicalRecords from './pages/student/MyMedicalRecords'
 import Events from './pages/student/Events'
 import AcademicTracker from './pages/student/AcademicTracker'
+import MyViolations from './pages/student/MyViolations'
 import CourseManagement from './pages/management/CourseManagement'
 import ScheduleManagement from './pages/management/ScheduleManagement'
 import StudentManagement from './pages/management/StudentManagement'
@@ -51,14 +53,14 @@ function App() {
         {/* Protected Routes inside MainLayout */}
         {userRole && (
           <Route element={<MainLayout userRole={userRole} onLogout={handleLogout} />}>
-            <Route path="/dashboard" element={<PlaceholderPage title={`${userRole} Dashboard`} />} />
-            
+            <Route path="/dashboard" element={<Dashboard />} />
+
             {/* Student & Shared Routes */}
             <Route path="/events" element={<Events />} />
             <Route path="/academic-tracker" element={<AcademicTracker />} />
             <Route path="/achievements" element={<PlaceholderPage title="My Achievements" />} />
             <Route path="/affiliations" element={<PlaceholderPage title="My Affiliations" />} />
-            <Route path="/violations" element={<PlaceholderPage title="My Violations" />} />
+              <Route path="/violations" element={<MyViolations />} />
             <Route path="/medical-records" element={<MyMedicalRecords />} />
             <Route path="/profile" element={<MyProfile />} />
             
@@ -68,7 +70,6 @@ function App() {
             <Route path="/student-management" element={<StudentManagement />} />            <Route path="/event-management" element={<EventManagement />} />
             <Route path="/violation-management" element={<ViolationManagement />} />
             <Route path="/medical-records-management" element={<MedicalRecordsManagement />} />
-            <Route path="/academic-records-management" element={<PlaceholderPage title="Academic Records Management" />} />
             
             {/* Admin Only Route */}
             <Route path="/faculty-management" element={<FacultyManagement />} />

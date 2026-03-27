@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { UserCircle, BookOpen, Phone, HeartPulse, Award, Shield, Edit, Camera, X } from 'lucide-react';
 import './MyProfile.css';
 
-const MyProfile = () => {
+const MyProfile = ({ studentData = null, readOnly = false }) => {
   const userRole = localStorage.getItem('userRole') || 'Student';
 
   const defaultProfiles = {
@@ -82,11 +82,14 @@ const MyProfile = () => {
 
   const initialStudent = defaultProfiles[userRole] || defaultProfiles.Student;
 
-  const [student, setStudent] = useState(() => {
+  const [localStudent, setLocalStudent] = useState(() => {
     const saved = localStorage.getItem(`ccs_my_profile_${userRole}`);
     if (saved) return JSON.parse(saved);
     return initialStudent;
   });
+
+  const student = studentData || localStudent;
+  const setStudent = studentData ? () => {} : setLocalStudent;
 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
@@ -127,23 +130,27 @@ const MyProfile = () => {
                 {initials}
               </div>
             )}
-            <button className="profile-edit-avatar-btn" title="Update Profile Picture">
-              <Camera size={16} />
-            </button>
+            {!readOnly && (
+              <button className="profile-edit-avatar-btn" title="Update Profile Picture">
+                <Camera size={16} />
+              </button>
+            )}
           </div>
           <div className="profile-header-details">
             <h2>{fullName}</h2>
             <p className="profile-student-no">{student.studentNo}</p>
             <div className="profile-badges">
-              <span className="profile-badge program-badge">{student.program}</span>
-              <span className="profile-badge status-badge">{student.academicStatus}</span>
+              <span className="profile-badge program-badge">{student.program || "Student"}</span>
+              <span className="profile-badge status-badge">{student.academicStatus || "Active"}</span>
             </div>
           </div>
-          <button className="profile-edit-btn" onClick={handleEditClick}>
-            <Edit size={16} />
-            Edit Profile
-          </button>
-        </div>
+          {!readOnly && (
+            <button className="profile-edit-btn" onClick={handleEditClick}>       
+              <Edit size={16} />
+              Edit Profile
+            </button>
+          )}
+      </div>
       </div>
 
       <div className="profile-content-grid">
