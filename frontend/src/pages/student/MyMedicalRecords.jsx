@@ -287,7 +287,7 @@ const MyMedicalRecords = () => {
         </div>
 
         <div className="sm-stat-card">
-          <div className="stat-icon-wrapper" style={{ backgroundColor: 'rgba(99, 102, 241, 0.15)', color: '#6366f1' }}>
+          <div className="stat-icon-wrapper" style={{ backgroundColor: 'var(--primary-light, rgba(79, 70, 229, 0.1))', color: 'var(--primary-color)' }}>
             <Calendar size={24} />
           </div>
           <div className="stat-info">
@@ -373,8 +373,8 @@ const MyMedicalRecords = () => {
               <div className="documents-list">
                 {documents.length === 0 ? (
                   <div className="no-docs">
-                    <FileText size={32} color="#cbd5e1" style={{ marginBottom: '8px' }} />
-                    <p style={{ margin: 0, color: '#64748b' }}>No documents uploaded yet.</p>
+                    <FileText size={32} color="var(--text-muted)" style={{ marginBottom: '8px' }} />
+                    <p style={{ margin: 0, color: 'var(--text-muted)' }}>No documents uploaded yet.</p>
                   </div>
                 ) : (
                   documents.map(doc => (
@@ -409,8 +409,8 @@ const MyMedicalRecords = () => {
             <div className="record-timeline">
               {pastRecords.length === 0 ? (
                 <div className="no-docs" style={{ marginTop: '0' }}>
-                  <Clock size={32} color="#cbd5e1" style={{ marginBottom: '8px' }} />
-                  <p style={{ margin: 0, color: '#64748b' }}>No past records found.</p>
+                  <Clock size={32} color="var(--text-muted)" style={{ marginBottom: '8px' }} />
+                  <p style={{ margin: 0, color: 'var(--text-muted)' }}>No past records found.</p>
                 </div>
               ) : (
                 pastRecords.map((log) => (
@@ -503,7 +503,7 @@ const MyMedicalRecords = () => {
                     className="styled-file-input"
                   />
                 </div>
-                <small style={{ color: '#64748b', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                <small style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '4px', display: 'block' }}>
                   Please attach a clear photo or PDF of your medical certificate or checkup result.
                 </small>
               </div>

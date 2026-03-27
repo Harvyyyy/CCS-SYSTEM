@@ -1,6 +1,6 @@
 .course-management-container {
   padding: 24px;
-  background-color: var(--background-light, #f8fafc);
+  background-color: var(--bg-main, #f8fafc);
   min-height: calc(100vh - 60px);
 }
 
@@ -14,12 +14,12 @@
 .page-header h2 {
   font-size: 24px;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--text-dark, #1e293b);
   margin: 0 0 4px 0;
 }
 
 .page-header p {
-  color: #64748b;
+  color: var(--text-muted, #64748b);
   font-size: 14px;
   margin: 0;
 }
@@ -28,8 +28,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background-color: #3b82f6;
-  color: white;
+  background-color: var(--primary-color, #3b82f6);
+  color: var(--text-white, white);
   min-width: 140px;
   justify-content: center;
   padding: 10px 16px;
@@ -41,7 +41,7 @@
 }
 
 .add-btn:hover {
-  background-color: #2563eb;
+  background-color: var(--primary-hover, #2563eb);
 }
 
 .controls-bar {
@@ -60,30 +60,32 @@
   left: 12px;
   top: 50%;
   transform: translateY(-50%);
-  color: #94a3b8;
+  color: var(--text-light, #94a3b8);
 }
 
 .search-box input {
   width: 100%;
   padding: 10px 12px 10px 40px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--border-color, #cbd5e1);
   border-radius: 8px;
   font-size: 14px;
   outline: none;
   transition: border-color 0.2s;
+  background-color: var(--bg-surface, #ffffff);
+  color: var(--text-dark, #333333);
 }
 
 .search-box input:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+  border-color: var(--primary-color, #3b82f6);
+  box-shadow: 0 0 0 2px var(--primary-light, rgba(59, 130, 246, 0.1));
 }
 
 .table-responsive {
-  background: white;
+  background-color: var(--bg-surface, white);
   border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.1));
   overflow: hidden;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color, #e2e8f0);
 }
 
 .courses-table {
@@ -93,24 +95,24 @@
 }
 
 .courses-table th {
-  background-color: #f8fafc;
+  background-color: var(--bg-subtle, #f8fafc);
   padding: 14px 16px;
   font-size: 13px;
   font-weight: 600;
-  color: #475569;
-  border-bottom: 2px solid #e2e8f0;
+  color: var(--text-medium, #475569);
+  border-bottom: 2px solid var(--border-color, #e2e8f0);
 }
 
 .courses-table td {
   padding: 14px 16px;
   font-size: 14px;
-  color: #334155;
-  border-bottom: 1px solid #e2e8f0;
+  color: var(--text-medium, #334155);
+  border-bottom: 1px solid var(--border-color, #e2e8f0);
   vertical-align: middle;
 }
 
 .courses-table tr:hover td {
-  background-color: #f1f5f9;
+  background-color: var(--bg-muted, #f1f5f9);
 }
 
 .courses-table tr:last-child td {
@@ -119,7 +121,7 @@
 
 .fw-medium {
   font-weight: 600;
-  color: #0f172a !important;
+  color: var(--text-dark, #0f172a) !important;
 }
 
 .actions-cell {
@@ -140,27 +142,27 @@
 }
 
 .action-btn.edit {
-  color: #3b82f6;
-  background-color: #eff6ff;
+  color: var(--primary-color, #3b82f6);
+  background-color: var(--primary-light, #eff6ff);
 }
 
 .action-btn.edit:hover {
-  background-color: #dbeafe;
+  background-color: var(--bg-muted, #dbeafe);
 }
 
 .action-btn.delete {
-  color: #ef4444;
-  background-color: #fef2f2;
+  color: var(--error-text, #ef4444);
+  background-color: var(--error-bg, #fef2f2);
 }
 
 .action-btn.delete:hover {
-  background-color: #fee2e2;
+  background-color: var(--bg-muted, #fee2e2);
 }
 
 .empty-state {
   text-align: center;
   padding: 40px !important;
-  color: #64748b !important;
+  color: var(--text-muted, #64748b) !important;
   font-style: italic;
 }
 
@@ -180,11 +182,11 @@
 }
 
 .modal-content {
-  background: white;
+  background-color: var(--bg-surface, white);
   border-radius: 12px;
   width: 100%;
   max-width: 500px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow: var(--shadow-lg, 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04));
 }
 
 .modal-header {
@@ -192,26 +194,26 @@
   justify-content: space-between;
   align-items: center;
   padding: 20px 24px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--border-color, #e2e8f0);
 }
 
 .modal-header h3 {
   margin: 0;
   font-size: 18px;
-  color: #0f172a;
+  color: var(--text-dark, #0f172a);
 }
 
 .close-btn {
   background: none;
   border: none;
-  color: #64748b;
+  color: var(--text-muted, #64748b);
   cursor: pointer;
   padding: 4px;
   display: flex;
 }
 
 .close-btn:hover {
-  color: #0f172a;
+  color: var(--text-dark, #0f172a);
 }
 
 .modal-form {
@@ -237,7 +239,7 @@
   display: block;
   font-size: 13px;
   font-weight: 500;
-  color: #475569;
+  color: var(--text-medium, #475569);
   margin-bottom: 6px;
 }
 
@@ -245,18 +247,20 @@
 .form-group select {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--border-color, #cbd5e1);
   border-radius: 6px;
   font-size: 14px;
   outline: none;
   transition: border-color 0.2s;
   box-sizing: border-box;
+  background-color: var(--bg-main, #ffffff);
+  color: var(--text-dark, #333333);
 }
 
 .form-group input:focus,
 .form-group select:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: var(--primary-color, #3b82f6);
+  box-shadow: 0 0 0 3px var(--primary-light, rgba(59, 130, 246, 0.1));
 }
 
 .modal-footer {
@@ -265,7 +269,7 @@
   gap: 12px;
   margin-top: 24px;
   padding-top: 20px;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--border-color, #e2e8f0);
 }
 
 .btn-cancel, .btn-submit {
@@ -278,20 +282,20 @@
 }
 
 .btn-cancel {
-  background-color: white;
-  border: 1px solid #cbd5e1;
-  color: #475569;
+  background-color: var(--bg-surface, white);
+  border: 1px solid var(--border-color, #cbd5e1);
+  color: var(--text-medium, #475569);
 }
 
 .btn-cancel:hover {
-  background-color: #f8fafc;
+  background-color: var(--bg-subtle, #f8fafc);
 }
 
 .btn-submit {
-  background-color: #3b82f6;
-  color: white;
+  background-color: var(--primary-color, #3b82f6);
+  color: var(--text-white, white);
 }
 
 .btn-submit:hover {
-  background-color: #2563eb;
+  background-color: var(--primary-hover, #2563eb);
 }

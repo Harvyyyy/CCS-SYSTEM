@@ -3,33 +3,87 @@ import { UserCircle, BookOpen, Phone, HeartPulse, Award, Shield, Edit, Camera, X
 import './MyProfile.css';
 
 const MyProfile = () => {
-  const initialStudent = {
-    id: '4',
-    studentNo: '2023-0004',
-    firstName: 'Harvy',
-    middleName: 'A.',
-    lastName: 'Penaflor',
-    gender: 'Male',
-    yearLevel: "4th Year",
-    program: "BSIT",
-    academicTrack: 'Web Development',
-    section: "IT-A",
-    academicStatus: 'Regular',
-    height: '175',
-    weight: '70',
-    email: 'harvy.penaflor@pnc.edu.ph',
-    contactNumber: '09174445555',
-    emergencyName: 'Elena Penaflor',
-    emergencyNumber: '09184445555',
-    emergencyRelation: 'Mother',
-    achievements: 'Hackathon Winner',
-    skills: 'JavaScript, React, Node.js',
-    interests: 'Full-stack Development, UI/UX',
-    profileImage: ''
+  const userRole = localStorage.getItem('userRole') || 'Student';
+
+  const defaultProfiles = {
+    Student: {
+      id: '4',
+      studentNo: '2023-0004',
+      firstName: 'Harvy',
+      middleName: 'A.',
+      lastName: 'Penaflor',
+      gender: 'Male',
+      yearLevel: "4th Year",
+      program: "BSIT",
+      academicTrack: 'Web Development',
+      section: "IT-A",
+      academicStatus: 'Regular',
+      height: '175',
+      weight: '70',
+      email: 'harvy.penaflor@pnc.edu.ph',
+      contactNumber: '09174445555',
+      emergencyName: 'Elena Penaflor',
+      emergencyNumber: '09184445555',
+      emergencyRelation: 'Mother',
+      achievements: 'Hackathon Winner',
+      skills: 'JavaScript, React, Node.js',
+      interests: 'Full-stack Development, UI/UX',
+      profileImage: ''
+    },
+    Faculty: {
+      id: '1',
+      studentNo: 'FAC-2015-01',
+      firstName: 'Dr. John',
+      middleName: 'M.',
+      lastName: 'Doe',
+      gender: 'Male',
+      yearLevel: "N/A",
+      program: "Faculty",
+      academicTrack: 'Computer Science',
+      section: "N/A",
+      academicStatus: 'Tenured',
+      height: '180',
+      weight: '75',
+      email: 'john.doe@pnc.edu.ph',
+      contactNumber: '09171234567',
+      emergencyName: 'Jane Doe',
+      emergencyNumber: '09181234567',
+      emergencyRelation: 'Spouse',
+      achievements: 'Research Grant 2023',
+      skills: 'Python, Machine Learning, Data Science',
+      interests: 'AI, Curriculum Development',
+      profileImage: ''
+    },
+    Admin: {
+      id: '99',
+      studentNo: 'ADM-001',
+      firstName: 'System',
+      middleName: '',
+      lastName: 'Administrator',
+      gender: 'N/A',
+      yearLevel: "N/A",
+      program: "Administration",
+      academicTrack: 'IT Infrastructure',
+      section: "N/A",
+      academicStatus: 'Staff',
+      height: 'N/A',
+      weight: 'N/A',
+      email: 'admin@pnc.edu.ph',
+      contactNumber: '09999999999',
+      emergencyName: 'N/A',
+      emergencyNumber: 'N/A',
+      emergencyRelation: 'N/A',
+      achievements: 'System Uptime 99.9%',
+      skills: 'Sysadmin, DevOps, Security',
+      interests: 'Infrastructure, Optimization',
+      profileImage: ''
+    }
   };
 
+  const initialStudent = defaultProfiles[userRole] || defaultProfiles.Student;
+
   const [student, setStudent] = useState(() => {
-    const saved = localStorage.getItem('ccs_my_profile');
+    const saved = localStorage.getItem(`ccs_my_profile_${userRole}`);
     if (saved) return JSON.parse(saved);
     return initialStudent;
   });
@@ -54,7 +108,7 @@ const MyProfile = () => {
   const handleSave = (e) => {
     e.preventDefault();
     setStudent(formData);
-    localStorage.setItem('ccs_my_profile', JSON.stringify(formData));
+    localStorage.setItem(`ccs_my_profile_${userRole}`, JSON.stringify(formData));
     setIsEditing(false);
   };
 
