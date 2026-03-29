@@ -9,9 +9,11 @@ import AccountManagement from './pages/management/AccountManagement'
 import EventManagement from './pages/management/EventManagement'
 import MedicalRecordsManagement from './pages/management/MedicalRecordsManagement'
 import MyMedicalRecords from './pages/student/MyMedicalRecords'
+import MySchedule from './pages/student/MySchedule'
 import Events from './pages/student/Events'
 import AcademicTracker from './pages/student/AcademicTracker'
 import MyViolations from './pages/student/MyViolations'
+import MyAffiliation from './pages/student/MyAffiliation'
 import CourseManagement from './pages/management/CourseManagement'
 import ScheduleManagement from './pages/management/ScheduleManagement'
 import StudentManagement from './pages/management/StudentManagement'
@@ -57,9 +59,10 @@ function App() {
 
             {/* Student & Shared Routes */}
             <Route path="/events" element={<Events />} />
+            <Route path="/my-schedule" element={<MySchedule />} />
             <Route path="/academic-tracker" element={<AcademicTracker />} />
             <Route path="/achievements" element={<PlaceholderPage title="My Achievements" />} />
-            <Route path="/affiliations" element={<PlaceholderPage title="My Affiliations" />} />
+            <Route path="/affiliations" element={<MyAffiliation />} />
               <Route path="/violations" element={<MyViolations />} />
             <Route path="/medical-records" element={<MyMedicalRecords />} />
             <Route path="/profile" element={<MyProfile />} />

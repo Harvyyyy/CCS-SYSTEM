@@ -392,6 +392,7 @@
 .btn-primary {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   background-color: var(--primary-color, #3b82f6);
   color: white;
@@ -400,6 +401,8 @@
   border-radius: 6px;
   font-weight: 500;
   cursor: pointer;
+  width: max-content; /* Force auto width instead of 100% if inherited */
+  min-width: max-content;
   transition: background-color 0.2s;
 }
 

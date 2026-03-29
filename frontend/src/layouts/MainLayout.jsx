@@ -19,7 +19,8 @@ import {
   Sun,
   Moon,
   Award,
-  Clock
+  Clock,
+  Bell
 } from 'lucide-react';
 import './MainLayout.css';
 import logo from '../assets/ccs-logo.png';
@@ -63,6 +64,7 @@ const ROLE_MENUS = {
 const MainLayout = ({ userRole, onLogout }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return localStorage.getItem('theme') === 'dark';
   });
@@ -91,7 +93,21 @@ const MainLayout = ({ userRole, onLogout }) => {
 
   const toggleDropdown = () => {
     setDropdownOpen(!dropdownOpen);
+    if (notificationsOpen) setNotificationsOpen(false);
   };
+
+  const toggleNotifications = () => {
+    setNotificationsOpen(!notificationsOpen);
+    if (dropdownOpen) setDropdownOpen(false);
+  };
+
+  // Mock Notifications Data
+  const mockNotifications = [
+    { id: 1, text: 'New event: Tech Symposium coming up!', time: '10 mins ago', unread: true },
+    { id: 2, text: 'Your schedule has been updated.', time: '1 hour ago', unread: true },
+    { id: 3, text: 'Reminder: Medical checkup due next week.', time: '1 day ago', unread: false },
+    { id: 4, text: 'System maintenance scheduled for midnight.', time: '2 days ago', unread: false },
+  ];
 
   return (
     <div className="layout-container">
@@ -131,6 +147,42 @@ const MainLayout = ({ userRole, onLogout }) => {
           </div>
 
           <div className="header-right">
+            <div className="notifications-container">
+              <button 
+                className="notification-toggle-btn" 
+                onClick={toggleNotifications}
+                title="Notifications"
+              >
+                <Bell size={20} />
+                {mockNotifications.some(n => n.unread) && <span className="notification-badge"></span>}
+              </button>
+
+              {notificationsOpen && (
+                <div className="notifications-dropdown-menu">
+                  <div className="notifications-header">
+                    <h3>Notifications</h3>
+                    <button className="mark-read-btn">Mark all as read</button>
+                  </div>
+                  <div className="notifications-list">
+                    {mockNotifications.map(notification => (
+                      <div key={notification.id} className={`notification-item ${notification.unread ? 'unread' : ''}`}>
+                        <div className="notification-icon">
+                          <Bell size={16} />
+                        </div>
+                        <div className="notification-content">
+                          <p>{notification.text}</p>
+                          <span className="notification-time">{notification.time}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="notifications-footer">
+                    <button className="view-all-btn">View All</button>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <button 
               className="theme-toggle-btn" 
               onClick={() => setIsDarkMode(!isDarkMode)}
