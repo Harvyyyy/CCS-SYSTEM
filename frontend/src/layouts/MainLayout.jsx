@@ -28,7 +28,7 @@ import './MainLayout.css';
 import logo from '../assets/ccs-logo.png';
 
 const ROLE_MENUS = {
-  Student: [
+  student: [
     { title: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { title: 'My Schedule', path: '/my-schedule', icon: Clock },
     { title: 'My Affiliations', path: '/affiliations', icon: Users },
@@ -39,7 +39,7 @@ const ROLE_MENUS = {
     { title: 'My Medical Records', path: '/medical-records', icon: HeartPulse },
     { title: 'My Profile', path: '/profile', icon: UserCircle },
   ],
-  Faculty: [
+  faculty: [
     { title: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { title: 'Schedule Management', path: '/schedule-management', icon: Clock },
     { title: 'My Schedule', path: '/my-schedule', icon: Clock },
@@ -53,7 +53,7 @@ const ROLE_MENUS = {
     { title: 'Violation Management', path: '/violation-management', icon: ShieldAlert },
     { title: 'Medical Records Management', path: '/medical-records-management', icon: HeartPulse },
   ],
-  Admin: [
+  admin: [
     { title: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { title: 'Faculty Management', path: '/faculty-management', icon: User },
     { title: 'Schedule Management', path: '/schedule-management', icon: Clock },
@@ -77,7 +77,7 @@ const MainLayout = ({ userRole, onLogout }) => {
     return localStorage.getItem('theme') === 'dark';
   });
   
-  const menus = ROLE_MENUS[userRole] || [];
+  const menus = ROLE_MENUS[userRole ? userRole.toLowerCase() : ''] || [];
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -116,6 +116,9 @@ const MainLayout = ({ userRole, onLogout }) => {
     { id: 3, text: 'Reminder: Medical checkup due next week.', time: '1 day ago', unread: false },
     { id: 4, text: 'System maintenance scheduled for midnight.', time: '2 days ago', unread: false },
   ];
+
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const userName = user.name || userRole;
 
   return (
     <div className="layout-container">
@@ -201,8 +204,8 @@ const MainLayout = ({ userRole, onLogout }) => {
 
             <div className="user-dropdown-container">
               <button className="user-profile-btn" onClick={toggleDropdown}>
-                <div className="user-avatar-small">{userRole?.charAt(0)}</div>
-                <span className="user-role-text">{userRole} Portal</span>
+                <div className="user-avatar-small">{userName?.charAt(0).toUpperCase()}</div>
+                <span className="user-role-text">{userName}</span>
               </button>
 
               {dropdownOpen && (

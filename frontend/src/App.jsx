@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Login from './pages/auth/Login'
 import MainLayout from './layouts/MainLayout'
@@ -23,26 +24,75 @@ import ViolationManagement from './pages/management/ViolationManagement'
 import AchievementManagement from './pages/management/AchievementManagement'
 import AnnouncementManagement from './pages/management/AnnouncementManagement'
 import ClubsOrgsManagement from './pages/management/ClubsOrgsManagement'
+import SessionGuard from './components/SessionGuard'
+import ForceSignoutGuard from './components/ForceSignoutGuard'
 import './App.css'
 
 function App() {
-  // Simple mock auth state
   const [userRole, setUserRole] = useState(() => {
     return localStorage.getItem('userRole') || null;
   });
 
-  const handleLogin = (role) => {
+  const [isForcedSignout, setIsForcedSignout] = useState(false);
+
+  useEffect(() => {
+    const handleForcedSignout = () => {
+      setIsForcedSignout(true);
+    };
+
+    window.addEventListener('password-reset-forced', handleForcedSignout);
+    return () => {
+      window.removeEventListener('password-reset-forced', handleForcedSignout);
+    };
+  }, []);
+
+  const [requiresPasswordChange, setRequiresPasswordChange] = useState(() => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      return user.requiresPasswordChange || false;
+    }
+    return false;
+  });
+
+  // Background polling to check if token is invalidated (e.g. password reset by admin)
+  useEffect(() => {
+    let intervalId;
+    if (userRole && !isForcedSignout && !requiresPasswordChange) {
+      intervalId = setInterval(() => {
+        axios.get('/api/auth/profile').catch(() => {});
+      }, 5000); // Pool every 5 seconds
+    }
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [userRole, isForcedSignout, requiresPasswordChange]);
+
+  const handleLogin = (role, needsPwdChange) => {
     localStorage.setItem('userRole', role);
     setUserRole(role);
+    setRequiresPasswordChange(needsPwdChange || false);
   };
 
   const handleLogout = () => {
     localStorage.removeItem('userRole');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
     setUserRole(null);
+    setRequiresPasswordChange(false);
+    setIsForcedSignout(false);
+  };
+
+  const handlePasswordChanged = () => {
+    setRequiresPasswordChange(false);
   };
 
   return (
     <BrowserRouter>
+      {isForcedSignout && <ForceSignoutGuard onLogout={handleLogout} />}
+      {userRole && requiresPasswordChange && !isForcedSignout ? (
+        <SessionGuard onLogout={handleLogout} onPasswordConfirmed={handlePasswordChanged} />
+      ) : (
       <Routes>
         {/* Public Route */}
         <Route 
@@ -61,13 +111,13 @@ function App() {
           <Route element={<MainLayout userRole={userRole} onLogout={handleLogout} />}>
             <Route path="/dashboard" element={<Dashboard />} />
 
-            {/* Student & Shared Routes */}
+            // Student & Shared Routes
             <Route path="/events" element={<Events />} />
             <Route path="/my-schedule" element={<MySchedule />} />
             <Route path="/academic-tracker" element={<AcademicTracker />} />
             <Route path="/achievements" element={<MyAchievements />} />
             <Route path="/affiliations" element={<MyAffiliation />} />
-              <Route path="/violations" element={<MyViolations />} />
+            <Route path="/violations" element={<MyViolations />} />
             <Route path="/medical-records" element={<MyMedicalRecords />} />
             <Route path="/profile" element={<MyProfile />} />
             
@@ -91,6 +141,7 @@ function App() {
         {/* Catch all - Redirect to login if not authenticated or dashboard if authenticated */}
         <Route path="*" element={<Navigate to={userRole ? "/dashboard" : "/"} replace />} />
       </Routes>
+      )}
     </BrowserRouter>
   )
 }

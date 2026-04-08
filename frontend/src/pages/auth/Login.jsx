@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
+import axios from 'axios';
 import './Login.css';
 import logo from '../../assets/ccs-logo.png';
 import bgImage from '../../assets/bg.jpg';
@@ -25,38 +26,24 @@ const Login = ({ onLogin }) => {
     setIsLoading(true);
     setError('');
 
-    // Backend-ready simulation
     try {
-      // Simulate API call
-      // const response = await fetch('/api/login', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(credentials)
-      // });
-      // const data = await response.json();
+      const response = await axios.post('/api/auth/login', credentials);
+      const data = response.data;
       
-      setTimeout(() => {
-        // Temporary mock users
-        const mockUsers = {
-          'admin': { password: 'password123', role: 'Admin' },
-          'faculty': { password: 'password123', role: 'Faculty' },
-          'student': { password: 'password123', role: 'Student' }
-        };
+      // Store token and user data
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data));
+      localStorage.setItem('userRole', data.role);
 
-        const user = mockUsers[credentials.userId];
-
-        if (user && user.password === credentials.password) {
-          // Trigger the App-level login state update which will redirect to /dashboard
-          if (onLogin) onLogin(user.role);
-        } else {
-          setError('Invalid User ID or password. Try: admin, faculty, or student (Password: password123)');
-        }
-        setIsLoading(false);
-      }, 1000);
-
+      if (onLogin) onLogin(data.role, data.requiresPasswordChange);
     } catch (err) {
       console.error('Login error:', err);
-      setError('An error occurred during login. Please try again.');
+      setError(
+        err.response && err.response.data.message
+          ? err.response.data.message
+          : 'An error occurred during login. Please check your credentials.'
+      );
+    } finally {
       setIsLoading(false);
     }
   };

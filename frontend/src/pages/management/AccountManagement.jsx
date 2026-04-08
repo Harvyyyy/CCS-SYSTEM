@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Search,
   Plus,
@@ -15,19 +15,11 @@ import {
   GraduationCap,
   Settings
 } from 'lucide-react';
+import axios from 'axios';
 import './AccountManagement.css';
 
-// Initial Mock Data
-const INITIAL_ACCOUNTS = [
-  { id: 1, userId: 'admin', fullName: 'System Administrator', email: 'admin@ccs.edu', role: 'Admin', status: 'Active', password: 'password123' },
-  { id: 2, userId: 'faculty_doe', fullName: 'John Doe', email: 'j.doe@ccs.edu', role: 'Faculty', status: 'Active', password: 'password123' },
-  { id: 3, userId: 'faculty_smith', fullName: 'Jane Smith', email: 'j.smith@ccs.edu', role: 'Faculty', status: 'Inactive', password: 'facultypassword' },
-  { id: 4, userId: 'student_001', fullName: 'Alice Johnson', email: 'a.johnson@ccs.edu', role: 'Student', status: 'Active', password: 'password123' },
-  { id: 5, userId: 'student_002', fullName: 'Bob Williams', email: 'b.williams@ccs.edu', role: 'Student', status: 'Active', password: 'studentpassword' },
-];
-
 const AccountManagement = () => {
-  const [accounts, setAccounts] = useState(INITIAL_ACCOUNTS);
+  const [accounts, setAccounts] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('All');
   
@@ -36,6 +28,9 @@ const AccountManagement = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [currentAccount, setCurrentAccount] = useState(null);
+
+  // Get current logged in user from localStorage to restrict edits
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
 
   // Toast notification state
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
@@ -46,6 +41,30 @@ const AccountManagement = () => {
       setToast({ show: false, message: '', type: 'success' });
     }, 3000);
   };
+
+  const fetchUsers = async () => {
+    try {
+      const response = await axios.get('/api/users');
+      // Map API response fields to what AccountManagement UI expects
+      const mappedUsers = response.data.map(u => ({
+        id: u._id,
+        userId: u.userId,
+        fullName: u.name,
+        email: u.email,
+        role: u.role ? u.role.charAt(0).toUpperCase() + u.role.slice(1) : 'Student',
+        status: 'Active', // Hardcoded since we don't have status in backend yet
+        requiresPasswordChange: u.requiresPasswordChange
+      }));
+      setAccounts(mappedUsers);
+    } catch (err) {
+      console.error('Failed to fetch users:', err);
+      showToast('Failed to load users from the server.', 'error');
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -65,10 +84,14 @@ const AccountManagement = () => {
 
   // Derived filtered data
   const filteredAccounts = accounts.filter(acc => {
+    const userIdSearch = acc.userId ? acc.userId.toLowerCase()     : '';
+    const fullNameSearch = acc.fullName ? acc.fullName.toLowerCase() : '';
+    const emailSearch = acc.email ? acc.email.toLowerCase()        : '';
+
     const matchesSearch = 
-      acc.userId.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      acc.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      acc.email.toLowerCase().includes(searchTerm.toLowerCase());
+      userIdSearch.includes(searchTerm.toLowerCase()) || 
+      fullNameSearch.includes(searchTerm.toLowerCase()) ||
+      emailSearch.includes(searchTerm.toLowerCase());
     const matchesRole = roleFilter === 'All' || acc.role === roleFilter;
     return matchesSearch && matchesRole;
   });
@@ -91,18 +114,37 @@ const AccountManagement = () => {
     setIsDeleteModalOpen(true);
   };
 
-  const handleDelete = () => {
-    setAccounts(accounts.filter(a => a.id !== currentAccount.id));
-    setIsDeleteModalOpen(false);
-    showToast(`Account ${currentAccount.userId} deleted successfully.`, 'error');
-    setCurrentAccount(null);
+  const handleDelete = async () => {
+    try {
+      await axios.delete(`/api/users/${currentAccount.id}`);
+      setAccounts(accounts.filter(a => a.id !== currentAccount.id));
+      setIsDeleteModalOpen(false);
+      showToast(`Account deleted successfully.`, 'error');
+      setCurrentAccount(null);
+    } catch (err) {
+      console.error('Delete error', err);
+      showToast('Failed to delete account.', 'error');
+    }
   };
 
-  const handleConfirmResetPassword = () => {
-    setAccounts(accounts.map(acc => acc.id === currentAccount.id ? { ...acc, password: 'password123' } : acc));
-    setIsResetModalOpen(false);
-    setIsModalOpen(false);
-    showToast(`Password for ${currentAccount.userId} reset successfully.`);
+  const handleConfirmResetPassword = async () => {
+    try {
+      await axios.put(`/api/users/${currentAccount.id}/reset-password`);
+      
+      // Update local state to reflect the reset visually
+      setAccounts(accounts.map(acc => 
+        acc.id === currentAccount.id 
+          ? { ...acc, requiresPasswordChange: true }
+          : acc
+      ));
+
+      setIsResetModalOpen(false);
+      setIsModalOpen(false);
+      showToast(`Password for ${currentAccount.userId} reset successfully to default.`);
+    } catch (err) {
+      console.error('Reset password error', err);
+      showToast('Failed to reset password.', 'error');
+    }
   };
 
   const handleResetPassword = () => {
@@ -114,22 +156,66 @@ const AccountManagement = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleFormSubmit = (e) => {
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
     if (currentAccount) {
-      // Edit
-      setAccounts(accounts.map(acc => acc.id === currentAccount.id ? { ...formData, id: currentAccount.id } : acc));
-      showToast('Account updated successfully.');
+      try {
+        const payload = {
+          name: formData.fullName,
+          email: formData.email,
+          role: formData.role.toLowerCase()
+        };
+        // Don't send empty passwords on edit
+        if (formData.password) payload.password = formData.password;
+
+        const response = await axios.put(`/api/users/${currentAccount.id}`, payload);
+        
+        const updatedData = {
+          ...formData, 
+          id: currentAccount.id,
+          role: response.data.role.charAt(0).toUpperCase() + response.data.role.slice(1)
+        };
+        
+        setAccounts(accounts.map(acc => acc.id === currentAccount.id ? updatedData : acc));
+        showToast('Account updated successfully.');
+        setIsModalOpen(false);
+      } catch (error) {
+        console.error('Error updating account:', error);
+        showToast('Failed to update account.', 'error');
+      }
     } else {
-      // Create
-      const newAccount = { 
-        ...formData, 
-        id: Math.max(0, ...accounts.map(a => a.id)) + 1 
-      };
-      setAccounts([...accounts, newAccount]);
-      showToast('New account created successfully.');
+      // Create via backend Admin override
+      try {
+        const payload = {
+          userId: formData.userId,
+          name: formData.fullName,
+          email: formData.email,
+          password: formData.password,
+          role: formData.role.toLowerCase()
+        };
+
+        const response = await axios.post('/api/auth/register', payload);
+
+        const newAccount = { 
+          id: response.data._id,
+          userId: response.data.userId,
+          fullName: response.data.name,
+          email: response.data.email,
+          role: response.data.role.charAt(0).toUpperCase() + response.data.role.slice(1),
+          status: 'Active',
+          requiresPasswordChange: response.data.requiresPasswordChange
+        };
+        setAccounts([...accounts, newAccount]);
+        showToast('New account created successfully.');
+        setIsModalOpen(false);
+      } catch (error) {
+        console.error('Error creating account:', error);
+        showToast(
+          error.response?.data?.message || 'Error creating account. Are you an Admin?', 
+          'error'
+        );
+      }
     }
-    setIsModalOpen(false);
   };
 
   return (
@@ -239,14 +325,26 @@ const AccountManagement = () => {
                   <td className="font-medium">
                     <div className="user-id-cell">
                       <div className="avatar-circle">
-                        {acc.fullName.charAt(0)}
+                        {(acc.fullName || '?').charAt(0).toUpperCase()}
                       </div>
                       {acc.userId}
                     </div>
                   </td>
                   <td>{acc.fullName}</td>
                   <td>{acc.email}</td>
-                  <td className="password-cell">{acc.password === 'password123' ? acc.password : '********'}</td>
+                  <td className="password-cell">
+                    {acc.requiresPasswordChange ? (
+                      <span style={{ color: '#f59e0b', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <AlertCircle size={14} />
+                        Default
+                      </span>
+                    ) : (
+                      <span style={{ color: '#10b981', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <CheckCircle2 size={14} />
+                        Custom
+                      </span>
+                    )}
+                  </td>
                   <td>
                     <span className={`role-badge role-${acc.role.toLowerCase()}`}>
                       {acc.role}
@@ -334,16 +432,16 @@ const AccountManagement = () => {
                 />
               </div>
 
-              {!currentAccount && (
+              {(!currentAccount || (currentAccount && currentAccount.id === currentUser._id)) && (
                 <div className="form-group">
-                  <label>Password</label>
+                  <label>{currentAccount ? "Change Password" : "Password"}</label>
                   <input 
                     type="password" 
                     name="password" 
                     value={formData.password} 
                     onChange={handleFormChange} 
-                    required 
-                    placeholder="Enter initial password"
+                    required={!currentAccount} 
+                    placeholder={currentAccount ? "Leave blank to keep current password" : "Enter initial password"}
                   />
                 </div>
               )}
@@ -367,28 +465,26 @@ const AccountManagement = () => {
                 </div>
               </div>
 
-              {currentAccount && (
-                <div className="form-group" style={{ marginTop: '8px' }}>
+              <div className="modal-footer" style={{ marginTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                {currentAccount && currentAccount.id !== currentUser._id ? (
                   <button 
                     type="button" 
                     className="secondary-btn" 
                     onClick={handleResetPassword}
                     style={{ width: 'fit-content', display: 'flex', alignItems: 'center', gap: '8px' }}
+                    title="Reset this user's password to 'password123'"
                   >
                     <RefreshCw size={16} />
-                    Reset Password to Default
+                    Reset Password
                   </button>
-                  <p className="text-muted" style={{ fontSize: '12px', marginTop: '4px' }}>
-                    User's password will be reset to <strong>password123</strong>.
-                  </p>
+                ) : <div></div>}
+                
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button type="button" className="secondary-btn" onClick={() => setIsModalOpen(false)}>Cancel</button>
+                  <button type="submit" className="primary-btn">
+                    {currentAccount ? 'Save Changes' : 'Create Account'}
+                  </button>
                 </div>
-              )}
-
-              <div className="modal-footer">
-                <button type="button" className="secondary-btn" onClick={() => setIsModalOpen(false)}>Cancel</button>
-                <button type="submit" className="primary-btn">
-                  {currentAccount ? 'Save Changes' : 'Create Account'}
-                </button>
               </div>
             </form>
           </div>
