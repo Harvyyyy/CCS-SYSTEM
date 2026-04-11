@@ -7,7 +7,7 @@ const connectDB = async () => {
     return cachedConnection;
   }
 
-  const mongoUri = process.env.MONGO_URI;
+  const mongoUri = process.env.MONGODB_URI;
 
   if (!mongoUri) {
     throw new Error("MONGO_URI is not set. Please configure it in environment variables.");
