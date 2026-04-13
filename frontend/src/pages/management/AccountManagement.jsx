@@ -83,7 +83,9 @@ const AccountManagement = () => {
   // Form State
   const [formData, setFormData] = useState({
     userId: '',
-    fullName: '',
+    firstName: '',
+    middleName: '',
+    lastName: '',
     email: '',
     password: '',
     role: 'Student',
@@ -113,13 +115,25 @@ const AccountManagement = () => {
   // Handlers
   const handleOpenCreate = () => {
     setCurrentAccount(null);
-    setFormData({ userId: '', fullName: '', email: '', password: '', role: 'Student', status: 'Active' });
+    setFormData({ userId: '', firstName: '', middleName: '', lastName: '', email: '', password: '', role: 'Student', status: 'Active' });
     setIsModalOpen(true);
   };
 
   const handleOpenEdit = (acc) => {
     setCurrentAccount(acc);
-    setFormData({ ...acc });
+    // Attempt to split fullName into first, middle, last
+    const parts = (acc.fullName || '').split(' ');
+    let firstName = parts[0] || '';
+    let lastName = parts.length > 1 ? parts[parts.length - 1] : '';
+    let middleName = parts.length > 2 ? parts.slice(1, -1).join(' ') : '';
+    
+    setFormData({ 
+      ...acc, 
+      firstName, 
+      middleName, 
+      lastName, 
+      password: '' // Don't pre-fill password on edit
+    });
     setIsModalOpen(true);
   };
 
@@ -172,10 +186,15 @@ const AccountManagement = () => {
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
+    const fullName = [formData.firstName, formData.middleName, formData.lastName]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+
     if (currentAccount) {
       try {
         const payload = {
-          name: formData.fullName,
+          name: fullName,
           email: formData.email,
           role: formData.role.toLowerCase(),
           accountStatus: toApiStatus(formData.status)
@@ -187,6 +206,7 @@ const AccountManagement = () => {
         
         const updatedData = {
           ...formData, 
+          fullName, // Update local display
           id: currentAccount.id,
           role: response.data.role.charAt(0).toUpperCase() + response.data.role.slice(1),
           status: toTitleStatus(response.data.accountStatus || formData.status)
@@ -204,7 +224,7 @@ const AccountManagement = () => {
       try {
         const payload = {
           userId: formData.userId,
-          name: formData.fullName,
+          name: fullName,
           email: formData.email,
           password: formData.password,
           role: formData.role.toLowerCase(),
@@ -425,16 +445,39 @@ const AccountManagement = () => {
                 />
               </div>
 
-              <div className="form-group">
-                <label>Full Name</label>
-                <input 
-                  type="text" 
-                  name="fullName" 
-                  value={formData.fullName} 
-                  onChange={handleFormChange} 
-                  required 
-                  placeholder="Enter full name"
-                />
+              <div className="form-row">
+                <div className="form-group">
+                  <label>First Name</label>
+                  <input 
+                    type="text" 
+                    name="firstName" 
+                    value={formData.firstName || ''} 
+                    onChange={handleFormChange} 
+                    required 
+                    placeholder="Enter first name"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Middle Name</label>
+                  <input 
+                    type="text" 
+                    name="middleName" 
+                    value={formData.middleName || ''} 
+                    onChange={handleFormChange} 
+                    placeholder="Optional"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Last Name</label>
+                  <input 
+                    type="text" 
+                    name="lastName" 
+                    value={formData.lastName || ''} 
+                    onChange={handleFormChange} 
+                    required 
+                    placeholder="Enter last name"
+                  />
+                </div>
               </div>
 
               <div className="form-group">
