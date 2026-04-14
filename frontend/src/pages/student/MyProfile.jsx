@@ -93,7 +93,6 @@ const MyProfile = ({ studentData = null, readOnly = false }) => {
   const student = studentData || localStudent;
   const setStudent = studentData ? () => {} : setLocalStudent;
   const [loadError, setLoadError] = useState('');
-  const [profileId, setProfileId] = useState('');
 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
@@ -214,7 +213,6 @@ const MyProfile = ({ studentData = null, readOnly = false }) => {
           yearGraduated: s.yearGraduated || '',
           profileImage: s.profileImage || ''
         };
-        setProfileId(s._id);
         setLocalStudent(mapped);
         localStorage.setItem(`ccs_my_profile_${userRole}`, JSON.stringify(mapped));
       }).catch((err) => {
@@ -248,7 +246,6 @@ const MyProfile = ({ studentData = null, readOnly = false }) => {
           emergencyRelation: '',
           profileImage: f.profileImage || ''
         };
-        setProfileId(f._id);
         setLocalStudent(mapped);
         localStorage.setItem(`ccs_my_profile_${userRole}`, JSON.stringify(mapped));
       }).catch((err) => {
@@ -256,7 +253,7 @@ const MyProfile = ({ studentData = null, readOnly = false }) => {
         setLoadError('Failed to load profile from server.');
       });
     }
-  }, [studentData, userRole]);
+  }, [studentData, userRole, initialStudent]);
 
   const fullName = student.firstName + ' ' + (student.middleName ? student.middleName + ' ' : '') + student.lastName;
   const initials = (student.firstName?.charAt(0) || '') + (student.lastName?.charAt(0) || '');
@@ -322,7 +319,7 @@ const MyProfile = ({ studentData = null, readOnly = false }) => {
               <span className="info-value">{student.gender}</span>
             </div>
             <div className="profile-info-item">
-              <span className="info-label">Student No.</span>
+              <span className="info-label">{userRole === 'Faculty' ? 'Employee No.' : 'Student No.'}</span>
               <span className="info-value">{studentNumber}</span>
             </div>
           </div>
@@ -331,25 +328,29 @@ const MyProfile = ({ studentData = null, readOnly = false }) => {
         <div className="profile-card">
           <div className="profile-card-header">
             <BookOpen className="profile-card-icon" />
-            <h3>Academic Information</h3>
+            <h3>{userRole === 'Faculty' ? 'Employment Information' : 'Academic Information'}</h3>
           </div>
           <div className="profile-card-body">
             <div className="profile-info-item">
-              <span className="info-label">Program</span>
+              <span className="info-label">{userRole === 'Faculty' ? 'Department' : 'Program'}</span>
               <span className="info-value">{student.program}</span>
             </div>
+            {userRole !== 'Faculty' && (
+              <div className="profile-info-item">
+                <span className="info-label">Year Level & Section</span>
+                <span className="info-value">{student.yearLevel} - {student.section}</span>
+              </div>
+            )}
             <div className="profile-info-item">
-              <span className="info-label">Year Level & Section</span>
-              <span className="info-value">{student.yearLevel} � {student.section}</span>
-            </div>
-            <div className="profile-info-item">
-              <span className="info-label">Academic Track</span>
+              <span className="info-label">{userRole === 'Faculty' ? 'Position' : 'Academic Track'}</span>
               <span className="info-value">{student.academicTrack || 'N/A'}</span>
             </div>
-            <div className="profile-info-item">
-              <span className="info-label">Academic Status</span>
-              <span className="info-value">{student.academicStatus}</span>
-            </div>
+            {userRole !== 'Faculty' && (
+              <div className="profile-info-item">
+                <span className="info-label">Academic Status</span>
+                <span className="info-value">{student.academicStatus}</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -367,41 +368,48 @@ const MyProfile = ({ studentData = null, readOnly = false }) => {
               <span className="info-label">Contact Number</span>
               <span className="info-value">{student.contactNumber}</span>
             </div>
-            <div className="profile-info-divider"></div>
-            <div className="profile-info-item">
-              <span className="info-label">Emergency Contact</span>
-              <span className="info-value">{student.emergencyName} ({student.emergencyRelation})</span>
-            </div>
-            <div className="profile-info-item">
-              <span className="info-label">Emergency Number</span>
-              <span className="info-value">{student.emergencyNumber}</span>
-            </div>
+            {userRole !== 'Faculty' && (
+              <>
+                <div className="profile-info-divider"></div>
+                <div className="profile-info-item">
+                  <span className="info-label">Emergency Contact</span>
+                  <span className="info-value">{student.emergencyName} ({student.emergencyRelation})</span>
+                </div>
+                <div className="profile-info-item">
+                  <span className="info-label">Emergency Number</span>
+                  <span className="info-value">{student.emergencyNumber}</span>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
-        <div className="profile-card">
-          <div className="profile-card-header">
-            <HeartPulse className="profile-card-icon" />
-            <h3>Physical Stats</h3>
-          </div>
-          <div className="profile-card-body profile-stats-body">
-            <div className="stat-box">
-              <span className="stat-value">{student.height ? `${student.height} cm` : '--'}</span>
-              <span className="stat-label">Height</span>
+        {userRole !== 'Faculty' && (
+          <div className="profile-card">
+            <div className="profile-card-header">
+              <HeartPulse className="profile-card-icon" />
+              <h3>Physical Stats</h3>
             </div>
-            <div className="stat-box">
-              <span className="stat-value">{student.weight ? `${student.weight} kg` : '--'}</span>
-              <span className="stat-label">Weight</span>
+            <div className="profile-card-body profile-stats-body">
+              <div className="stat-box">
+                <span className="stat-value">{student.height ? `${student.height} cm` : '--'}</span>
+                <span className="stat-label">Height</span>
+              </div>
+              <div className="stat-box">
+                <span className="stat-value">{student.weight ? `${student.weight} kg` : '--'}</span>
+                <span className="stat-label">Weight</span>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
-        <div className="profile-card full-width">
-          <div className="profile-card-header">
-            <Award className="profile-card-icon" />
-            <h3>Skills, Interests & Achievements</h3>
-          </div>
-          <div className="profile-card-body three-cols">
+        {userRole !== 'Faculty' && (
+          <div className="profile-card full-width">
+            <div className="profile-card-header">
+              <Award className="profile-card-icon" />
+              <h3>Skills, Interests & Achievements</h3>
+            </div>
+            <div className="profile-card-body three-cols">
             <div className="profile-info-flex">
               <span className="info-label-block">Achievements</span>
               <div className="info-box-value">{student.achievements || 'No achievements recorded'}</div>
@@ -424,6 +432,7 @@ const MyProfile = ({ studentData = null, readOnly = false }) => {
             </div>
           </div>
         </div>
+        )}
       </div>
 
       {isEditing && (
@@ -452,38 +461,42 @@ const MyProfile = ({ studentData = null, readOnly = false }) => {
                   <label>Contact Number</label>
                   <input type="text" name="contactNumber" value={formData.contactNumber || ''} onChange={handleInputChange} />
                 </div>
-                <div className="form-group">
-                  <label>Height (cm)</label>
-                  <input type="number" name="height" value={formData.height || ''} onChange={handleInputChange} />
-                </div>
-                <div className="form-group">
-                  <label>Weight (kg)</label>
-                  <input type="number" name="weight" value={formData.weight || ''} onChange={handleInputChange} />
-                </div>
-                <div className="form-group">
-                  <label>Emergency Contact Name</label>
-                  <input type="text" name="emergencyName" value={formData.emergencyName || ''} onChange={handleInputChange} />
-                </div>
-                <div className="form-group">
-                  <label>Emergency Contact Relation</label>
-                  <input type="text" name="emergencyRelation" value={formData.emergencyRelation || ''} onChange={handleInputChange} />
-                </div>
-                <div className="form-group">
-                  <label>Emergency Number</label>
-                  <input type="text" name="emergencyNumber" value={formData.emergencyNumber || ''} onChange={handleInputChange} />
-                </div>
-                <div className="form-group full-width">
-                  <label>Achievements</label>
-                  <textarea name="achievements" value={formData.achievements || ''} onChange={handleInputChange} rows={2} />
-                </div>
-                <div className="form-group full-width">
-                  <label>Skills (comma separated)</label>
-                  <input type="text" name="skills" value={formData.skills || ''} onChange={handleInputChange} />
-                </div>
-                <div className="form-group full-width">
-                  <label>Interests (comma separated)</label>
-                  <input type="text" name="interests" value={formData.interests || ''} onChange={handleInputChange} />
-                </div>
+                {userRole !== 'Faculty' && (
+                  <>
+                    <div className="form-group">
+                      <label>Height (cm)</label>
+                      <input type="number" name="height" value={formData.height || ''} onChange={handleInputChange} />
+                    </div>
+                    <div className="form-group">
+                      <label>Weight (kg)</label>
+                      <input type="number" name="weight" value={formData.weight || ''} onChange={handleInputChange} />
+                    </div>
+                    <div className="form-group">
+                      <label>Emergency Contact Name</label>
+                      <input type="text" name="emergencyName" value={formData.emergencyName || ''} onChange={handleInputChange} />
+                    </div>
+                    <div className="form-group">
+                      <label>Emergency Contact Relation</label>
+                      <input type="text" name="emergencyRelation" value={formData.emergencyRelation || ''} onChange={handleInputChange} />
+                    </div>
+                    <div className="form-group">
+                      <label>Emergency Number</label>
+                      <input type="text" name="emergencyNumber" value={formData.emergencyNumber || ''} onChange={handleInputChange} />
+                    </div>
+                    <div className="form-group full-width">
+                      <label>Achievements</label>
+                      <textarea name="achievements" value={formData.achievements || ''} onChange={handleInputChange} rows={2} />
+                    </div>
+                    <div className="form-group full-width">
+                      <label>Skills (comma separated)</label>
+                      <input type="text" name="skills" value={formData.skills || ''} onChange={handleInputChange} />
+                    </div>
+                    <div className="form-group full-width">
+                      <label>Interests (comma separated)</label>
+                      <input type="text" name="interests" value={formData.interests || ''} onChange={handleInputChange} />
+                    </div>
+                  </>
+                )}
               </div>
               <div className="profile-modal-footer">
                 <button type="button" className="btn-cancel" onClick={handleCloseEdit}>Cancel</button>

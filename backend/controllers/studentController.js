@@ -1,0 +1,183 @@
+const StudentProfile = require("../models/StudentProfile");
+const User = require("../models/User");
+const mongoose = require("mongoose");
+
+const isValidObjectId = (value) => mongoose.Types.ObjectId.isValid(value);
+
+// @desc    Get all students
+// @route   GET /api/students
+// @access  Private/Admin
+const getStudents = async (req, res) => {
+  try {
+    const students = await StudentProfile.find().populate("user", "userId email name");
+    res.json(students);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// @desc    Get student by ID
+// @route   GET /api/students/:id
+// @access  Private/Admin
+const getStudentById = async (req, res) => {
+  try {
+    const student = await StudentProfile.findById(req.params.id).populate("user", "userId email name");
+    if (!student) {
+      return res.status(404).json({ message: "Student profile not found" });
+    }
+    res.json(student);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// @desc    Create a student profile
+// @route   POST /api/students
+// @access  Private/Admin
+const createStudent = async (req, res) => {
+  try {
+    const {
+      userId, studentNumber, firstName, middleName, lastName, gender,
+      yearLevel, program, academicTrack, section, academicStatus, height,
+      weight, contactNumber, emergencyContactName, emergencyContactNumber,
+      emergencyContactRelation, yearGraduated, email, password
+    } = req.body;
+
+    if (!userId || !studentNumber || !firstName || !lastName || !height) {
+      return res.status(400).json({ message: "Required fields missing" });
+    }
+
+    let user = await User.findOne({ userId });
+
+    // Auto-create user if parameter is enabled & doesn't exist
+    if (!user) {
+       user = await User.create({
+          userId,
+          name: `${firstName} ${lastName}`,
+          email: email || `${studentNumber}@student.app.edu`,
+          password: password || "password123",
+          role: "student"
+       });
+    }
+
+    const existingStudent = await StudentProfile.findOne({
+      $or: [{ user: user._id }, { studentNumber }],
+    });
+
+    if (existingStudent) {
+      return res.status(400).json({ message: "Student profile (or student number) already exists" });
+    }
+
+    const student = await StudentProfile.create({
+      user: user._id,
+      studentNumber,
+      firstName,
+      middleName,
+      lastName,
+      gender,
+      yearLevel,
+      program,
+      academicTrack: isValidObjectId(academicTrack) ? academicTrack : undefined,
+      section: isValidObjectId(section) ? section : undefined,
+      academicStatus,
+      height,
+      weight,
+      contactNumber,
+      emergencyContactName,
+      emergencyContactNumber,
+      emergencyContactRelation,
+      yearGraduated,
+    });
+
+    const populated = await student.populate("user", "userId email name");
+    res.status(201).json(populated);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// @desc    Update a student profile
+// @route   PUT /api/students/:id
+// @access  Private/Admin
+const updateStudent = async (req, res) => {
+  try {
+    const student = await StudentProfile.findById(req.params.id);
+    if (!student) {
+      return res.status(404).json({ message: "Student profile not found" });
+    }
+
+    const {
+      userId, studentNumber, firstName, middleName, lastName, gender,
+      yearLevel, program, academicTrack, section, academicStatus, height,
+      weight, contactNumber, emergencyContactName, emergencyContactNumber,
+      emergencyContactRelation, yearGraduated, email
+    } = req.body;
+
+    if (userId) {
+      const user = await User.findOne({ userId });
+      if (!user) {
+        return res.status(400).json({ message: "User not found for userId" });
+      }
+      student.user = user._id;
+      if (email) {
+        user.email = email;
+        await user.save();
+      }
+    }
+
+    if (studentNumber) student.studentNumber = studentNumber;
+    if (firstName !== undefined) student.firstName = firstName;
+    if (middleName !== undefined) student.middleName = middleName;
+    if (lastName !== undefined) student.lastName = lastName;
+    if (gender !== undefined) student.gender = gender;
+    if (yearLevel !== undefined) student.yearLevel = yearLevel;
+    if (program !== undefined) student.program = program;
+    
+    if (academicTrack !== undefined) {
+      student.academicTrack = isValidObjectId(academicTrack) ? academicTrack : undefined;
+    }
+    if (section !== undefined) {
+      student.section = isValidObjectId(section) ? section : undefined;
+    }
+    
+    if (academicStatus !== undefined) student.academicStatus = academicStatus;
+    if (height !== undefined) student.height = height;
+    if (weight !== undefined) student.weight = weight;
+    if (contactNumber !== undefined) student.contactNumber = contactNumber;
+    if (emergencyContactName !== undefined) student.emergencyContactName = emergencyContactName;
+    if (emergencyContactNumber !== undefined) student.emergencyContactNumber = emergencyContactNumber;
+    if (emergencyContactRelation !== undefined) student.emergencyContactRelation = emergencyContactRelation;
+    if (yearGraduated !== undefined) student.yearGraduated = yearGraduated;
+
+    const updated = await student.save();
+    const populated = await updated.populate("user", "userId email name");
+    res.json(populated);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// @desc    Delete a student profile
+// @route   DELETE /api/students/:id
+// @access  Private/Admin
+const deleteStudent = async (req, res) => {
+  try {
+    const student = await StudentProfile.findByIdAndDelete(req.params.id);
+    if (!student) return res.status(404).json({ message: "Student profile not found" });
+    
+    // Optionally delete the user account too, but we will leave the user account intact for now
+    // await User.findByIdAndDelete(student.user);
+    
+    res.json({ message: "Student profile deleted" });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+module.exports = {
+  getStudents,
+  getStudentById,
+  createStudent,
+  updateStudent,
+  deleteStudent,
+};
