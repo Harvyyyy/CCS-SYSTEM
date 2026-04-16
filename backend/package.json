@@ -5,8 +5,15 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon server.js",
+    "dev:development": "set DOTENV_CONFIG_PATH=.env.development&& nodemon -r dotenv/config server.js",
     "seed:temp": "node scripts/seedTempData.js",
-    "seed:temp:reset": "node scripts/seedTempData.js --reset"
+    "seed:temp:reset": "node scripts/seedTempData.js --reset",
+    "seed:temp:users": "node scripts/seeders/users.js",
+    "seed:temp:admin": "node scripts/seeders/adminProfiles.js",
+    "seed:temp:faculty": "node scripts/seeders/facultyProfiles.js",
+    "seed:temp:student": "node scripts/seeders/studentProfiles.js",
+    "seed:temp:courses": "node scripts/seeders/courses.js",
+    "seed:temp:all": "node scripts/seeders/index.js"
   },
   "keywords": [],
   "author": "",

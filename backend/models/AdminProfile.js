@@ -18,6 +18,15 @@ const adminProfileSchema = new mongoose.Schema(
     contactNumber: {
       type: String,
     },
+    achievements: {
+      type: String,
+    },
+    skills: {
+      type: String,
+    },
+    interests: {
+      type: String,
+    },
   },
   { timestamps: true }
 );

@@ -33,6 +33,15 @@ const facultyProfileSchema = new mongoose.Schema(
     position: {
       type: String,
     },
+    achievements: {
+      type: String,
+    },
+    skills: {
+      type: String,
+    },
+    interests: {
+      type: String,
+    },
     // TODO: profileImage field (string) to be added later when storage is decided.
     contactNumber: {
       type: String,

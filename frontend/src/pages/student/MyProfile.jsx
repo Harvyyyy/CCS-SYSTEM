@@ -3,6 +3,105 @@ import { UserCircle, BookOpen, Phone, HeartPulse, Award, Shield, Edit, Camera, X
 import axios from 'axios';
 import './MyProfile.css';
 
+const parseListField = (value) => {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).trim()).filter(Boolean).join(', ');
+  }
+
+  if (typeof value === 'string') {
+    return value
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .join(', ');
+  }
+
+  return '';
+};
+
+const normalizeProfileResponse = (profile, role) => {
+  if (role === 'Admin') {
+    return {
+      id: profile._id || profile.id,
+      studentNo: profile.user?.userId || '',
+      firstName: profile.fullName || '',
+      middleName: '',
+      lastName: '',
+      gender: 'N/A',
+      yearLevel: 'N/A',
+      program: 'Administration',
+      academicTrack: profile.position || '',
+      section: 'N/A',
+      academicStatus: 'Staff',
+      height: '',
+      weight: '',
+      email: profile.user?.email || '',
+      contactNumber: profile.contactNumber || '',
+      emergencyName: 'N/A',
+      emergencyNumber: 'N/A',
+      emergencyRelation: 'N/A',
+      achievements: profile.achievements || '',
+      skills: parseListField(profile.skills),
+      interests: parseListField(profile.interests),
+      profileImage: profile.profileImage || ''
+    };
+  }
+
+  if (role === 'Faculty') {
+    return {
+      id: profile._id || profile.id,
+      studentNo: profile.employeeIdNumber || '',
+      firstName: profile.firstName || '',
+      middleName: profile.middleName || '',
+      lastName: profile.lastName || '',
+      gender: profile.gender || 'N/A',
+      yearLevel: 'N/A',
+      program: profile.department || 'Faculty',
+      academicTrack: profile.position || '',
+      section: 'N/A',
+      academicStatus: 'Active',
+      height: '',
+      weight: '',
+      email: profile.user?.email || '',
+      contactNumber: profile.contactNumber || '',
+      emergencyName: '',
+      emergencyNumber: '',
+      emergencyRelation: '',
+      achievements: profile.achievements || '',
+      skills: parseListField(profile.skills),
+      interests: parseListField(profile.interests),
+      profileImage: profile.profileImage || ''
+    };
+  }
+
+  return {
+    id: profile._id || profile.id,
+    studentNumber: profile.studentNumber || '',
+    studentNo: profile.studentNumber || '',
+    firstName: profile.firstName || '',
+    middleName: profile.middleName || '',
+    lastName: profile.lastName || '',
+    gender: profile.gender || 'N/A',
+    yearLevel: profile.yearLevel || 'N/A',
+    program: profile.program || 'N/A',
+    academicTrack: profile.academicTrack || '',
+    section: profile.section || '',
+    academicStatus: profile.academicStatus ? profile.academicStatus.charAt(0).toUpperCase() + profile.academicStatus.slice(1) : 'Regular',
+    height: profile.height || '',
+    weight: profile.weight || '',
+    email: profile.user?.email || '',
+    contactNumber: profile.contactNumber || '',
+    emergencyName: profile.emergencyContactName || '',
+    emergencyNumber: profile.emergencyContactNumber || '',
+    emergencyRelation: profile.emergencyContactRelation || '',
+    yearGraduated: profile.yearGraduated || '',
+    achievements: profile.achievements || '',
+    skills: parseListField(profile.skills),
+    interests: parseListField(profile.interests),
+    profileImage: profile.profileImage || ''
+  };
+};
+
 const MyProfile = ({ studentData = null, readOnly = false }) => {
   const rawRole = localStorage.getItem('userRole') || 'student';
   const userRole = rawRole.charAt(0).toUpperCase() + rawRole.slice(1);
@@ -84,11 +183,7 @@ const MyProfile = ({ studentData = null, readOnly = false }) => {
 
   const initialStudent = defaultProfiles[userRole] || defaultProfiles.Student;
 
-  const [localStudent, setLocalStudent] = useState(() => {
-    const saved = localStorage.getItem(`ccs_my_profile_${userRole}`);
-    if (saved) return JSON.parse(saved);
-    return initialStudent;
-  });
+  const [localStudent, setLocalStudent] = useState(initialStudent);
 
   const student = studentData || localStudent;
   const setStudent = studentData ? () => {} : setLocalStudent;
@@ -113,15 +208,21 @@ const MyProfile = ({ studentData = null, readOnly = false }) => {
 
   const handleSave = (e) => {
     e.preventDefault();
+    const normalizedSkills = parseListField(formData.skills);
+    const normalizedInterests = parseListField(formData.interests);
+    const normalizedFormData = {
+      ...formData,
+      skills: normalizedSkills,
+      interests: normalizedInterests
+    };
+
     if (studentData) {
-      setStudent(formData);
-      localStorage.setItem(`ccs_my_profile_${userRole}`, JSON.stringify(formData));
+      setStudent(normalizedFormData);
       setIsEditing(false);
       return;
     }
 
-    if (userRole === 'Student') {
-      axios.put('/api/students/me', {
+    const payload = userRole === 'Student' ? {
         studentNumber: formData.studentNumber || formData.studentNo,
         firstName: formData.firstName,
         middleName: formData.middleName,
@@ -137,27 +238,11 @@ const MyProfile = ({ studentData = null, readOnly = false }) => {
         emergencyContactNumber: formData.emergencyNumber,
         emergencyContactRelation: formData.emergencyRelation,
         yearGraduated: formData.yearGraduated,
-        email: formData.email
-      }).then((response) => {
-        const s = response.data;
-        const mapped = {
-          ...formData,
-          studentNumber: s.studentNumber,
-          studentNo: s.studentNumber,
-          email: s.user?.email || formData.email
-        };
-        setStudent(mapped);
-        localStorage.setItem(`ccs_my_profile_${userRole}`, JSON.stringify(mapped));
-        setIsEditing(false);
-      }).catch((err) => {
-        console.error('Failed to save student profile:', err);
-        setLoadError(err.response?.data?.message || 'Failed to save profile.');
-      });
-      return;
-    }
-
-    if (userRole === 'Faculty') {
-      axios.put('/api/faculty/me', {
+        email: formData.email,
+        achievements: normalizedFormData.achievements,
+        skills: normalizedSkills,
+        interests: normalizedInterests
+      } : userRole === 'Faculty' ? {
         employeeIdNumber: formData.studentNumber || formData.studentNo,
         firstName: formData.firstName,
         middleName: formData.middleName,
@@ -166,93 +251,41 @@ const MyProfile = ({ studentData = null, readOnly = false }) => {
         department: formData.program,
         position: formData.academicTrack,
         contactNumber: formData.contactNumber,
-        email: formData.email
-      }).then((response) => {
-        const f = response.data;
-        const mapped = {
-          ...formData,
-          studentNumber: f.employeeIdNumber || formData.studentNumber,
-          studentNo: f.employeeIdNumber || formData.studentNo,
-          email: f.user?.email || formData.email
-        };
-        setStudent(mapped);
-        localStorage.setItem(`ccs_my_profile_${userRole}`, JSON.stringify(mapped));
-        setIsEditing(false);
-      }).catch((err) => {
-        console.error('Failed to save faculty profile:', err);
-        setLoadError(err.response?.data?.message || 'Failed to save profile.');
-      });
-    }
+        email: formData.email,
+        achievements: normalizedFormData.achievements,
+        skills: normalizedSkills,
+        interests: normalizedInterests
+      } : {
+        fullName: `${formData.firstName} ${formData.middleName ? `${formData.middleName} ` : ''}${formData.lastName}`.trim(),
+        position: formData.academicTrack,
+        contactNumber: formData.contactNumber,
+        email: formData.email,
+        achievements: normalizedFormData.achievements,
+        skills: normalizedSkills,
+        interests: normalizedInterests
+      };
+
+    axios.put('/api/profile/me', payload).then((response) => {
+      const mapped = normalizeProfileResponse(response.data, userRole);
+      setStudent(mapped);
+      setLocalStudent(mapped);
+      setIsEditing(false);
+    }).catch((err) => {
+      console.error('Failed to save profile:', err);
+      setLoadError(err.response?.data?.message || 'Failed to save profile.');
+    });
   };
 
   useEffect(() => {
     if (studentData) return;
-    if (userRole === 'Student') {
-      axios.get('/api/students/me').then((response) => {
-        const s = response.data;
-        const mapped = {
-          ...initialStudent,
-          studentNumber: s.studentNumber,
-          studentNo: s.studentNumber,
-          firstName: s.firstName || '',
-          middleName: s.middleName || '',
-          lastName: s.lastName || '',
-          gender: s.gender || 'N/A',
-          yearLevel: s.yearLevel || 'N/A',
-          program: s.program || 'N/A',
-          academicTrack: s.academicTrack || '',
-          section: s.section || '',
-          academicStatus: s.academicStatus ? s.academicStatus.charAt(0).toUpperCase() + s.academicStatus.slice(1) : 'Regular',
-          height: s.height || '',
-          weight: s.weight || '',
-          email: s.user?.email || '',
-          contactNumber: s.contactNumber || '',
-          emergencyName: s.emergencyContactName || '',
-          emergencyNumber: s.emergencyContactNumber || '',
-          emergencyRelation: s.emergencyContactRelation || '',
-          yearGraduated: s.yearGraduated || '',
-          profileImage: s.profileImage || ''
-        };
-        setLocalStudent(mapped);
-        localStorage.setItem(`ccs_my_profile_${userRole}`, JSON.stringify(mapped));
-      }).catch((err) => {
-        console.error('Failed to load student profile:', err);
-        setLoadError('Failed to load profile from server.');
-      });
-    }
-
-    if (userRole === 'Faculty') {
-      axios.get('/api/faculty/me').then((response) => {
-        const f = response.data;
-        const mapped = {
-          ...initialStudent,
-          studentNumber: f.employeeIdNumber || '',
-          studentNo: f.employeeIdNumber || '',
-          firstName: f.firstName || '',
-          middleName: f.middleName || '',
-          lastName: f.lastName || '',
-          gender: f.gender || 'N/A',
-          yearLevel: 'N/A',
-          program: f.department || 'Faculty',
-          academicTrack: f.position || '',
-          section: 'N/A',
-          academicStatus: 'Active',
-          height: '',
-          weight: '',
-          email: f.user?.email || '',
-          contactNumber: f.contactNumber || '',
-          emergencyName: '',
-          emergencyNumber: '',
-          emergencyRelation: '',
-          profileImage: f.profileImage || ''
-        };
-        setLocalStudent(mapped);
-        localStorage.setItem(`ccs_my_profile_${userRole}`, JSON.stringify(mapped));
-      }).catch((err) => {
-        console.error('Failed to load faculty profile:', err);
-        setLoadError('Failed to load profile from server.');
-      });
-    }
+    axios.get('/api/profile/me').then((response) => {
+      const mapped = normalizeProfileResponse(response.data, userRole);
+      setLocalStudent(mapped);
+      setStudent(mapped);
+    }).catch((err) => {
+      console.error('Failed to load profile:', err);
+      setLoadError('Failed to load profile from server.');
+    });
   }, [studentData, userRole, initialStudent]);
 
   const fullName = student.firstName + ' ' + (student.middleName ? student.middleName + ' ' : '') + student.lastName;
@@ -489,11 +522,11 @@ const MyProfile = ({ studentData = null, readOnly = false }) => {
                     </div>
                     <div className="form-group full-width">
                       <label>Skills (comma separated)</label>
-                      <input type="text" name="skills" value={formData.skills || ''} onChange={handleInputChange} />
+                      <input type="text" name="skills" value={formData.skills || ''} onChange={handleInputChange} placeholder="React, Python, UI/UX" />
                     </div>
                     <div className="form-group full-width">
                       <label>Interests (comma separated)</label>
-                      <input type="text" name="interests" value={formData.interests || ''} onChange={handleInputChange} />
+                      <input type="text" name="interests" value={formData.interests || ''} onChange={handleInputChange} placeholder="AI, Web Development" />
                     </div>
                   </>
                 )}

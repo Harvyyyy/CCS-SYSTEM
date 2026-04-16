@@ -30,6 +30,23 @@ const DEFAULT_FORM_DATA = {
   interests: ''
 };
 
+const normalizeListField = (value) => {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).trim()).filter(Boolean).join(', ');
+  }
+
+  if (typeof value === 'string') {
+    return value
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .join(', ');
+  }
+
+  return '';
+};
+
+
 const INITIAL_STUDENTS = [
   {
     id: '1',
@@ -300,6 +317,9 @@ const StudentManagement = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const normalizedSkills = normalizeListField(formData.skills);
+    const normalizedInterests = normalizeListField(formData.interests);
+    const normalizedAchievements = formData.achievements || '';
     if (editingStudent) {
       axios.put(`/api/students/${editingStudent.id}`, {
         userId: formData.userId,
@@ -318,10 +338,13 @@ const StudentManagement = () => {
         emergencyContactNumber: formData.emergencyNumber,
         emergencyContactRelation: formData.emergencyRelation,
         yearGraduated: formData.yearGraduated,
-        email: formData.email
+        email: formData.email,
+        achievements: normalizedAchievements,
+        skills: normalizedSkills,
+        interests: normalizedInterests
       }).then((response) => {
         const updated = mapStudent(response.data);
-        const merged = { ...formData, ...updated, id: editingStudent.id };
+        const merged = { ...formData, ...updated, id: editingStudent.id, achievements: normalizedAchievements, skills: normalizedSkills, interests: normalizedInterests };
         setStudents(students.map((s) => s.id === editingStudent.id ? merged : s));
         closeModal();
       }).catch((err) => {
@@ -346,10 +369,13 @@ const StudentManagement = () => {
         emergencyContactNumber: formData.emergencyNumber,
         emergencyContactRelation: formData.emergencyRelation,
         yearGraduated: formData.yearGraduated,
-        email: formData.email
+        email: formData.email,
+        achievements: normalizedAchievements,
+        skills: normalizedSkills,
+        interests: normalizedInterests
       }).then((response) => {
         const created = mapStudent(response.data);
-        const merged = { ...formData, ...created };
+        const merged = { ...formData, ...created, achievements: normalizedAchievements, skills: normalizedSkills, interests: normalizedInterests };
         setStudents([...students, merged]);
         closeModal();
       }).catch((err) => {

@@ -21,11 +21,17 @@ const authRoutes = require("./routes/authRoutes");
 const facultyRoutes = require("./routes/facultyRoutes");
 const studentRoutes = require("./routes/studentRoutes");
 const profileRoutes = require("./routes/profileRoutes");
+const courseRoutes = require("./routes/courseRoutes");
+const violationRoutes = require("./routes/violationRoutes");
+const violationTypeRoutes = require("./routes/violationTypeRoutes");
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/faculty", facultyRoutes);
 app.use("/api/students", studentRoutes);
 app.use("/api/profile", profileRoutes);
+app.use("/api/courses", courseRoutes);
+app.use("/api/violations", violationRoutes);
+app.use("/api/violation-types", violationTypeRoutes);
 
 const PORT = process.env.PORT || 5000;
 

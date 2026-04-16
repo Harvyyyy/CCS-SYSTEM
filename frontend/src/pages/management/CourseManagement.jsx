@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Search, Plus, Edit2, Trash2, X, BookOpen } from 'lucide-react';
+import axios from 'axios';
 import './CourseManagement.css';
 
 const DEFAULT_COURSES = [
@@ -20,19 +21,20 @@ const DEFAULT_COURSES = [
   { id: '15', code: 'PED102', desc: 'Physical Education 2', units: 2, prereq: 'PED101', year: 1, sem: 2 }
 ];
 
+const normalizeCourse = (course) => ({
+  id: course._id || course.id,
+  code: course.code || '',
+  desc: course.desc || '',
+  units: Number(course.units ?? 0),
+  prereq: course.prereq || '--',
+  year: Number(course.year ?? 1),
+  sem: Number(course.sem ?? 1)
+});
+
 const CourseManagement = () => {
-  const [courses, setCourses] = useState(() => {
-    try {
-      const savedCourses = localStorage.getItem('ccs_courses');
-      if (savedCourses) {
-        return JSON.parse(savedCourses);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-    localStorage.setItem('ccs_courses', JSON.stringify(DEFAULT_COURSES));
-    return DEFAULT_COURSES;
-  });
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -47,9 +49,27 @@ const CourseManagement = () => {
     sem: 1
   });
 
-  const saveToStorage = (updatedCourses) => {
+  const loadCourses = async () => {
+    try {
+      setLoading(true);
+      setErrorMessage('');
+      const response = await axios.get('/api/courses');
+      setCourses(response.data.map(normalizeCourse));
+    } catch (error) {
+      console.error('Failed to load courses:', error);
+      setErrorMessage('Failed to load courses from the server.');
+      setCourses(DEFAULT_COURSES);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadCourses();
+  }, []);
+
+  const saveToServer = (updatedCourses) => {
     setCourses(updatedCourses);
-    localStorage.setItem('ccs_courses', JSON.stringify(updatedCourses));
   };
 
   const handleInputChange = (e) => {
@@ -60,19 +80,35 @@ const CourseManagement = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (editingCourse) {
-      const updated = courses.map(c => c.id === editingCourse.id ? { ...formData, id: c.id } : c);
-      saveToStorage(updated);
+      axios.put(`/api/courses/${editingCourse.id}`, formData).then((response) => {
+        const updated = courses.map((course) => course.id === editingCourse.id ? normalizeCourse(response.data) : course);
+        saveToServer(updated);
+        closeModal();
+      }).catch((error) => {
+        console.error('Failed to update course:', error);
+        setErrorMessage(error.response?.data?.message || 'Failed to update course.');
+      });
     } else {
-      const newCourse = { ...formData, id: window.crypto.randomUUID() };
-      saveToStorage([...courses, newCourse]);
+      axios.post('/api/courses', formData).then((response) => {
+        const newCourse = normalizeCourse(response.data);
+        saveToServer([...courses, newCourse]);
+        closeModal();
+      }).catch((error) => {
+        console.error('Failed to create course:', error);
+        setErrorMessage(error.response?.data?.message || 'Failed to create course.');
+      });
     }
-    closeModal();
   };
 
   const handleDelete = (id) => {
     if (window.confirm('Are you sure you want to delete this course?')) {
-      const updated = courses.filter(c => c.id !== id);
-      saveToStorage(updated);
+      axios.delete(`/api/courses/${id}`).then(() => {
+        const updated = courses.filter((course) => course.id !== id);
+        saveToServer(updated);
+      }).catch((error) => {
+        console.error('Failed to delete course:', error);
+        setErrorMessage(error.response?.data?.message || 'Failed to delete course.');
+      });
     }
   };
 
@@ -103,6 +139,7 @@ const CourseManagement = () => {
 
   return (
     <div className="course-management-container">
+      {errorMessage && <div className="empty-state" style={{ marginBottom: '16px', color: '#b91c1c', fontStyle: 'normal' }}>{errorMessage}</div>}
       <div className="page-header">
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
@@ -143,7 +180,11 @@ const CourseManagement = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredCourses.length > 0 ? (
+            {loading ? (
+              <tr>
+                <td colSpan="7" className="empty-state">Loading courses...</td>
+              </tr>
+            ) : filteredCourses.length > 0 ? (
               filteredCourses.map(course => (
                 <tr key={course.id}>
                   <td className="fw-medium">{course.code}</td>

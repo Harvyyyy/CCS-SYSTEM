@@ -67,10 +67,18 @@ const studentProfileSchema = new mongoose.Schema(
     yearGraduated: {
       type: Number,
     },
+    achievements: {
+      type: String,
+    },
+    skills: {
+      type: String,
+    },
+    interests: {
+      type: String,
+    },
     // TODO: profileImage field (string) to be added later when storage is decided.
     // TODO: email is stored on User; decide if StudentProfile should mirror it.
     // TODO: frontend uses studentNo; map to studentNumber when integrating.
-    // TODO: frontend fields to add later: achievements, skills, interests.
   },
   { timestamps: true }
 );

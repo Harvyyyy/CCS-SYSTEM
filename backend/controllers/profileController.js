@@ -64,7 +64,7 @@ const updateMyProfile = async (req, res) => {
         }
       }
     } else if (role === "faculty") {
-      const { firstName, middleName, lastName, gender, department, position, contactNumber, email } = req.body;
+      const { firstName, middleName, lastName, gender, department, position, contactNumber, email, achievements, skills, interests } = req.body;
       if (firstName !== undefined) profile.firstName = firstName;
       if (middleName !== undefined) profile.middleName = middleName;
       if (lastName !== undefined) profile.lastName = lastName;
@@ -72,6 +72,9 @@ const updateMyProfile = async (req, res) => {
       if (department !== undefined) profile.department = department;
       if (position !== undefined) profile.position = position;
       if (contactNumber !== undefined) profile.contactNumber = contactNumber;
+      if (achievements !== undefined) profile.achievements = achievements;
+      if (skills !== undefined) profile.skills = skills;
+      if (interests !== undefined) profile.interests = interests;
 
       if (email) {
         const user = await User.findById(req.user._id);
@@ -85,7 +88,7 @@ const updateMyProfile = async (req, res) => {
         firstName, middleName, lastName, gender, yearLevel, program,
         academicStatus, height, weight, contactNumber,
         emergencyContactName, emergencyContactNumber, emergencyContactRelation,
-        yearGraduated, email
+        yearGraduated, email, achievements, skills, interests
       } = req.body;
 
       if (firstName !== undefined) profile.firstName = firstName;
@@ -102,6 +105,9 @@ const updateMyProfile = async (req, res) => {
       if (emergencyContactNumber !== undefined) profile.emergencyContactNumber = emergencyContactNumber;
       if (emergencyContactRelation !== undefined) profile.emergencyContactRelation = emergencyContactRelation;
       if (yearGraduated !== undefined) profile.yearGraduated = yearGraduated;
+      if (achievements !== undefined) profile.achievements = achievements;
+      if (skills !== undefined) profile.skills = skills;
+      if (interests !== undefined) profile.interests = interests;
 
       if (email) {
         const user = await User.findById(req.user._id);

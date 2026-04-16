@@ -40,7 +40,8 @@ const createStudent = async (req, res) => {
       userId, studentNumber, firstName, middleName, lastName, gender,
       yearLevel, program, academicTrack, section, academicStatus, height,
       weight, contactNumber, emergencyContactName, emergencyContactNumber,
-      emergencyContactRelation, yearGraduated, email, password
+      emergencyContactRelation, yearGraduated, email, password,
+      achievements, skills, interests
     } = req.body;
 
     if (!userId || !studentNumber || !firstName || !lastName || !height) {
@@ -87,6 +88,9 @@ const createStudent = async (req, res) => {
       emergencyContactNumber,
       emergencyContactRelation,
       yearGraduated,
+      achievements,
+      skills,
+      interests,
     });
 
     const populated = await student.populate("user", "userId email name");
@@ -110,7 +114,7 @@ const updateStudent = async (req, res) => {
       userId, studentNumber, firstName, middleName, lastName, gender,
       yearLevel, program, academicTrack, section, academicStatus, height,
       weight, contactNumber, emergencyContactName, emergencyContactNumber,
-      emergencyContactRelation, yearGraduated, email
+      emergencyContactRelation, yearGraduated, email, achievements, skills, interests
     } = req.body;
 
     if (userId) {
@@ -148,6 +152,17 @@ const updateStudent = async (req, res) => {
     if (emergencyContactNumber !== undefined) student.emergencyContactNumber = emergencyContactNumber;
     if (emergencyContactRelation !== undefined) student.emergencyContactRelation = emergencyContactRelation;
     if (yearGraduated !== undefined) student.yearGraduated = yearGraduated;
+    if (achievements !== undefined) student.achievements = achievements;
+    if (skills !== undefined) student.skills = skills;
+    if (interests !== undefined) student.interests = interests;
+
+    if (email !== undefined) {
+      const user = await User.findById(student.user);
+      if (user) {
+        user.email = email;
+        await user.save();
+      }
+    }
 
     const updated = await student.save();
     const populated = await updated.populate("user", "userId email name");
