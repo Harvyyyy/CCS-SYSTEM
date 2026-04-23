@@ -59,16 +59,18 @@ const createStudent = async (req, res) => {
       achievements, skills, interests
     } = req.body;
 
-    if (!userId || !studentNumber || !firstName || !lastName || !height) {
+    const finalUserId = userId || studentNumber;
+
+    if (!studentNumber || !firstName || !lastName || !height) {
       return res.status(400).json({ message: "Required fields missing" });
     }
 
-    let user = await User.findOne({ userId });
+    let user = await User.findOne({ userId: finalUserId });
 
     // Auto-create user if parameter is enabled & doesn't exist
     if (!user) {
        user = await User.create({
-          userId,
+          userId: finalUserId,
           name: `${firstName} ${lastName}`,
           email: email || `${studentNumber}@student.app.edu`,
           password: password || "password123",
@@ -96,16 +98,16 @@ const createStudent = async (req, res) => {
       academicTrack: normalizeOptionalObjectId(academicTrack),
       section: normalizeOptionalObjectId(section),
       academicStatus,
-      height,
-      weight,
+      height: height ? Number(height) : undefined,
+      weight: weight ? Number(weight) : undefined,
       contactNumber,
       emergencyContactName,
       emergencyContactNumber,
       emergencyContactRelation,
-      yearGraduated,
-      achievements: normalizeTextField(achievements),
-      skills: normalizeTextField(skills),
-      interests: normalizeTextField(interests),
+      yearGraduated: yearGraduated ? Number(yearGraduated) : undefined,
+      achievements: Array.isArray(achievements) ? achievements : (achievements ? achievements.split(',').map(s=>s.trim()) : []),
+      skills: Array.isArray(skills) ? skills : (skills ? skills.split(',').map(s=>s.trim()) : []),
+      interests: Array.isArray(interests) ? interests : (interests ? interests.split(',').map(s=>s.trim()) : []),
     });
 
     const populated = await student.populate("user", "userId email name");
