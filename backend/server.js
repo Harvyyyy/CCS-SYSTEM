@@ -16,18 +16,28 @@ app.get("/", (req, res) => {
   res.send("API is running...");
 });
 
-const userRoutes = require("./routes/userRoutes");
-const authRoutes = require("./routes/authRoutes");
-const facultyRoutes = require("./routes/facultyRoutes");
-const studentRoutes = require("./routes/studentRoutes");
-const profileRoutes = require("./routes/profileRoutes");
-const courseRoutes = require("./routes/courseRoutes");
-const medicalRecordRoutes = require("./routes/medicalRecordRoutes");
-const academicRoutes = require("./routes/academicRoutes");
-const classScheduleRoutes = require("./routes/classScheduleRoutes");
-const violationRoutes = require("./routes/violationRoutes");
-const violationTypeRoutes = require("./routes/violationTypeRoutes");
-const eventRoutes = require("./routes/eventRoutes");
+const normalizeRouter = (moduleExport, modulePath) => {
+  const router = moduleExport?.default || moduleExport;
+  if (typeof router !== "function") {
+    throw new TypeError(
+      `Route module "${modulePath}" must export an Express router function`
+    );
+  }
+  return router;
+};
+
+const userRoutes = normalizeRouter(require("./routes/userRoutes"), "./routes/userRoutes");
+const authRoutes = normalizeRouter(require("./routes/authRoutes"), "./routes/authRoutes");
+const facultyRoutes = normalizeRouter(require("./routes/facultyRoutes"), "./routes/facultyRoutes");
+const studentRoutes = normalizeRouter(require("./routes/studentRoutes"), "./routes/studentRoutes");
+const profileRoutes = normalizeRouter(require("./routes/profileRoutes"), "./routes/profileRoutes");
+const courseRoutes = normalizeRouter(require("./routes/courseRoutes"), "./routes/courseRoutes");
+const medicalRecordRoutes = normalizeRouter(require("./routes/medicalRecordRoutes"), "./routes/medicalRecordRoutes");
+const academicRoutes = normalizeRouter(require("./routes/academicRoutes"), "./routes/academicRoutes");
+const classScheduleRoutes = normalizeRouter(require("./routes/classScheduleRoutes"), "./routes/classScheduleRoutes");
+const violationRoutes = normalizeRouter(require("./routes/violationRoutes"), "./routes/violationRoutes");
+const violationTypeRoutes = normalizeRouter(require("./routes/violationTypeRoutes"), "./routes/violationTypeRoutes");
+const eventRoutes = normalizeRouter(require("./routes/eventRoutes"), "./routes/eventRoutes");
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/faculty", facultyRoutes);
