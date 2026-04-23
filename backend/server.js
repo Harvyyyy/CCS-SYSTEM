@@ -17,13 +17,32 @@ app.get("/", (req, res) => {
 });
 
 const normalizeRouter = (moduleExport, modulePath) => {
-  const router = moduleExport?.default || moduleExport;
-  if (typeof router !== "function") {
+  let candidate = moduleExport;
+
+  // Handle CJS/ESM interop wrappers that may nest exports.
+  for (let i = 0; i < 4 && candidate && typeof candidate !== "function"; i += 1) {
+    if (typeof candidate.default === "function") {
+      candidate = candidate.default;
+      break;
+    }
+    if (candidate.default) {
+      candidate = candidate.default;
+      continue;
+    }
+    if (typeof candidate.router === "function") {
+      candidate = candidate.router;
+      break;
+    }
+    break;
+  }
+
+  if (typeof candidate !== "function") {
     throw new TypeError(
       `Route module "${modulePath}" must export an Express router function`
     );
   }
-  return router;
+
+  return candidate;
 };
 
 const userRoutes = normalizeRouter(require("./routes/userRoutes"), "./routes/userRoutes");
