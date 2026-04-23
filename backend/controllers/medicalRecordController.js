@@ -288,17 +288,22 @@ const updateMyMedicalRecord = async (req, res) => {
       return res.status(400).json({ message: "An event is required for event-based medical records" });
     }
 
-    const uploadedFile = req.file || null;
-
-    if (uploadedFile || req.body.fileName || req.body.fileSize) {
+    if (
+      req.body.fileName !== undefined ||
+      req.body.storedFileName !== undefined ||
+      req.body.filePath !== undefined ||
+      req.body.mimeType !== undefined ||
+      req.body.fileSize !== undefined
+    ) {
       const document = normalizeDocument({
-        fileName: uploadedFile ? uploadedFile.originalname : req.body.fileName,
-        storedFileName: uploadedFile ? uploadedFile.filename : undefined,
-        filePath: uploadedFile ? toPublicFilePath(uploadedFile.path) : undefined,
-        mimeType: uploadedFile ? uploadedFile.mimetype : undefined,
+        fileName: req.body.fileName,
+        storedFileName: req.body.storedFileName,
+        filePath: req.body.filePath,
+        mimeType: req.body.mimeType,
         uploadDate: req.body.uploadDate || new Date().toISOString().split("T")[0],
-        fileSize: uploadedFile ? `${(uploadedFile.size / 1024).toFixed(1)} KB` : req.body.fileSize,
+        fileSize: req.body.fileSize,
       });
+
       if (document) {
         record.documents.push(document);
       }
@@ -333,15 +338,13 @@ const addMyMedicalDocument = async (req, res) => {
       return res.status(404).json({ message: "Medical record not found" });
     }
 
-    const uploadedFile = req.file || null;
-
     const document = normalizeDocument({
-      fileName: uploadedFile ? uploadedFile.originalname : req.body.fileName,
-      storedFileName: uploadedFile ? uploadedFile.filename : undefined,
-      filePath: uploadedFile ? toPublicFilePath(uploadedFile.path) : undefined,
-      mimeType: uploadedFile ? uploadedFile.mimetype : undefined,
+      fileName: req.body.fileName,
+      storedFileName: req.body.storedFileName,
+      filePath: req.body.filePath,
+      mimeType: req.body.mimeType,
       uploadDate: req.body.uploadDate || new Date().toISOString().split("T")[0],
-      fileSize: uploadedFile ? `${(uploadedFile.size / 1024).toFixed(1)} KB` : req.body.fileSize,
+      fileSize: req.body.fileSize,
     });
     if (!document) {
       return res.status(400).json({ message: "A valid file is required" });
