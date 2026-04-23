@@ -2,17 +2,27 @@ const { connectAndRun } = require("./shared");
 const { seedUsersCore } = require("./users");
 const { seedAdminProfilesCore } = require("./adminProfiles");
 const { seedFacultyProfilesCore } = require("./facultyProfiles");
+const { seedSchoolYearSectionsCore } = require("./schoolYearSections");
 const { seedStudentProfilesCore } = require("./studentProfiles");
 const { seedCoursesCore } = require("./courses");
+const { seedClassSchedulesCore } = require("./classSchedules");
 const { seedEventsCore } = require("./events");
+const { seedViolationTypesCore } = require("./violationTypes");
+const { seedViolationsCore } = require("./violations");
+const { seedMedicalRecordsCore } = require("./medicalRecords");
 
 const seedAllCore = async ({ reset = false } = {}) => {
   const userMap = await seedUsersCore({ reset });
   await seedAdminProfilesCore({ reset, userMap });
   await seedFacultyProfilesCore({ reset, userMap });
-  await seedStudentProfilesCore({ reset, userMap });
+  await seedSchoolYearSectionsCore({ reset, userMap });
   await seedCoursesCore({ reset });
+  await seedStudentProfilesCore({ reset, userMap });
+  await seedClassSchedulesCore({ reset, userMap });
+  await seedViolationTypesCore({ reset });
+  await seedViolationsCore({ reset });
   await seedEventsCore({ reset, userMap });
+  await seedMedicalRecordsCore({ reset });
 
   console.log("Temp seed completed.");
 };

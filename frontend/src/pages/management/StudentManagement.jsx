@@ -12,9 +12,12 @@ const DEFAULT_FORM_DATA = {
   lastName: '',
   gender: 'Male',
   yearLevel: '1st Year',
+  schoolYear: '',
   program: "BSIT",
   academicTrack: '',
   section: '',
+  sectionId: '',
+  sectionName: '',
   academicStatus: 'Regular',
   height: '',
   weight: '',
@@ -28,6 +31,11 @@ const DEFAULT_FORM_DATA = {
   achievements: '',
   skills: '',
   interests: ''
+};
+
+const formatSchoolYearLabel = (schoolYearRecord) => {
+  if (!schoolYearRecord) return '';
+  return `${schoolYearRecord.schoolYear} (${schoolYearRecord.semester})`;
 };
 
 const normalizeListField = (value) => {
@@ -193,8 +201,11 @@ const normalizeStudent = (student) => {
     middleName,
     lastName,
     yearLevel: student.yearLevel || '1st Year',
+    schoolYear: student.schoolYear || '',
     program: student.course || 'BSCS',
     section: student.section || '',
+    sectionId: student.sectionId || '',
+    sectionName: student.sectionName || student.section || '',
     academicStatus: student.status === 'Inactive' ? 'Irregular' : 'Regular',
     email: student.email || ''
   };
@@ -204,6 +215,7 @@ const StudentManagement = () => {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [sectionOptions, setSectionOptions] = useState([]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
@@ -244,6 +256,13 @@ const StudentManagement = () => {
 
   const mapStudent = (s) => {
     const user = s.user || {};
+    const sectionObject = s.section && typeof s.section === 'object' ? s.section : null;
+    const sectionId = sectionObject?._id || (typeof s.section === 'string' ? s.section : '');
+    const sectionName = sectionObject?.sectionName || (typeof s.section === 'string' ? s.section : '');
+    const sectionYearLevel = sectionObject?.yearLevel;
+    const sectionSchoolYear = sectionObject?.schoolYearSemester;
+    const mappedSchoolYear = s.schoolYear || formatSchoolYearLabel(sectionSchoolYear);
+
     return normalizeStudent({
       ...s,
       id: s._id || s.id,
@@ -254,8 +273,12 @@ const StudentManagement = () => {
       middleName: s.middleName,
       lastName: s.lastName,
       gender: s.gender,
-      yearLevel: s.yearLevel,
+      yearLevel: sectionYearLevel || s.yearLevel,
+      schoolYear: mappedSchoolYear,
       program: s.program,
+      section: sectionName,
+      sectionId,
+      sectionName,
       academicStatus: toTitleStatus(s.academicStatus),
       height: s.height,
       weight: s.weight,
@@ -292,8 +315,35 @@ const StudentManagement = () => {
     fetchStudents();
   }, []);
 
+  useEffect(() => {
+    const loadAcademicOptions = async () => {
+      try {
+        const response = await axios.get('/api/academic/options');
+        setSectionOptions(response.data?.sections || []);
+      } catch (err) {
+        console.error('Failed to load school year/section options:', err);
+      }
+    };
+
+    loadAcademicOptions();
+  }, []);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+
+    if (name === 'sectionId') {
+      const selected = sectionOptions.find((item) => item._id === value);
+      setFormData((prev) => ({
+        ...prev,
+        sectionId: value,
+        section: selected?.sectionName || '',
+        sectionName: selected?.sectionName || '',
+        schoolYear: selected?.schoolYearLabel || '',
+        yearLevel: selected?.yearLevel || ''
+      }));
+      return;
+    }
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -340,8 +390,8 @@ const StudentManagement = () => {
         middleName: formData.middleName,
         lastName: formData.lastName,
         gender: formData.gender,
-        yearLevel: formData.yearLevel,
         program: formData.program,
+        section: formData.sectionId || undefined,
         academicStatus: formData.academicStatus.toLowerCase(),
         height: formData.height,
         weight: formData.weight,
@@ -371,8 +421,8 @@ const StudentManagement = () => {
         middleName: formData.middleName,
         lastName: formData.lastName,
         gender: formData.gender,
-        yearLevel: formData.yearLevel,
         program: formData.program,
+        section: formData.sectionId || undefined,
         academicStatus: formData.academicStatus.toLowerCase(),
         height: formData.height,
         weight: formData.weight,
@@ -767,27 +817,20 @@ const StudentManagement = () => {
                     <option value="BSIT">BSIT</option>
                   </select>
                 </div>
-                <div className="form-group half">
-                  <label>Year Level</label>
-                  <select name="yearLevel" value={formData.yearLevel} onChange={handleInputChange}>
-                    <option value="1st Year">1st Year</option>
-                    <option value="2nd Year">2nd Year</option>
-                    <option value="3rd Year">3rd Year</option>
-                    <option value="4th Year">4th Year</option>
-                  </select>
-                </div>
               </div>
 
               <div className="form-row">
                 <div className="form-group half">
                   <label>Section</label>
-                  <input
-                    type="text"
-                    name="section"
-                    value={formData.section}
-                    onChange={handleInputChange}
-                    placeholder="e.g. CS2A"
-                  />
+                  <select name="sectionId" value={formData.sectionId} onChange={handleInputChange}>
+                    <option value="">Select section</option>
+                    {sectionOptions
+                      .map((item) => (
+                        <option key={item._id} value={item._id}>
+                          {`${item.sectionName} (${item.yearLevel || 'No year level'} • ${item.schoolYearLabel})`}
+                        </option>
+                      ))}
+                  </select>
                 </div>
                 <div className="form-group half">
                   <label>Academic Track</label>

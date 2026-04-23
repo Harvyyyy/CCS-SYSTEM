@@ -1,7 +1,13 @@
 const StudentProfile = require("../../models/StudentProfile");
+const Section = require("../../models/Section");
 const { connectAndRun } = require("./shared");
 const { seedUsersCore } = require("./users");
 const { studentProfilesToSeed } = require("./data");
+
+const formatSchoolYearLabel = (schoolYearSemester) => {
+  if (!schoolYearSemester) return "";
+  return `${schoolYearSemester.schoolYear} (${schoolYearSemester.semester})`;
+};
 
 const seedStudentProfilesCore = async ({ reset = false, userMap } = {}) => {
   const resolvedUserMap = userMap || await seedUsersCore({ reset: false });
@@ -10,9 +16,20 @@ const seedStudentProfilesCore = async ({ reset = false, userMap } = {}) => {
     await StudentProfile.deleteMany({});
   }
 
-  for (const profileData of studentProfilesToSeed) {
+  const sections = await Section.find().populate("schoolYearSemester", "schoolYear semester isCurrent");
+  const currentSections = sections.filter((section) => section.schoolYearSemester?.isCurrent);
+  const activeSectionPool = currentSections.length > 0 ? currentSections : sections;
+
+  for (let index = 0; index < studentProfilesToSeed.length; index += 1) {
+    const profileData = studentProfilesToSeed[index];
     const user = resolvedUserMap.get(profileData.userId);
     if (!user) continue;
+
+    const programSections = activeSectionPool.filter((section) => section.program === profileData.program);
+    const yearSections = programSections.filter((section) => section.yearLevel === profileData.yearLevel);
+    const candidateSections =
+      yearSections.length > 0 ? yearSections : (programSections.length > 0 ? programSections : activeSectionPool);
+    const assignedSection = candidateSections.length > 0 ? candidateSections[index % candidateSections.length] : null;
 
     await StudentProfile.findOneAndUpdate(
       { user: user._id },
@@ -23,8 +40,10 @@ const seedStudentProfilesCore = async ({ reset = false, userMap } = {}) => {
         middleName: profileData.middleName,
         lastName: profileData.lastName,
         gender: profileData.gender,
-        yearLevel: profileData.yearLevel,
-        program: profileData.program,
+        yearLevel: assignedSection?.yearLevel || profileData.yearLevel,
+        schoolYear: formatSchoolYearLabel(assignedSection?.schoolYearSemester),
+        program: assignedSection?.program || profileData.program,
+        section: assignedSection?._id,
         academicStatus: profileData.academicStatus,
         height: profileData.height,
         weight: profileData.weight,

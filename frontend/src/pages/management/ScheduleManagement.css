@@ -187,6 +187,16 @@
   background-color: var(--primary-light, #e0f2fe);
 }
 
+.purpose-badge.lecture {
+  color: var(--success-text, #059669);
+  background-color: var(--success-bg, #d1fae5);
+}
+
+.purpose-badge.laboratory {
+  color: var(--info-text, #2563eb);
+  background-color: var(--primary-light, #dbeafe);
+}
+
 .dark-theme .purpose-badge.special-activity {
   background-color: rgba(139, 92, 246, 0.2);
   color: #c4b5fd;

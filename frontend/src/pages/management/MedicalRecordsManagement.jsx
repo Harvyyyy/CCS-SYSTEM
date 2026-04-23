@@ -1,42 +1,41 @@
-import React, { useState, useMemo } from 'react';
-import { 
+import React, { useEffect, useMemo, useState } from 'react';
+import axios from 'axios';
+import {
   Search, Filter, Plus, X, Edit, Trash2, Activity,
-  FileText, CheckCircle, AlertTriangle, Clock, User, Download, UploadCloud
+  FileText, CheckCircle, AlertTriangle, Clock, Download, UploadCloud
 } from 'lucide-react';
 import './MedicalRecordsManagement.css';
 
-const mockMedicalRecords = [
-  { id: '1', studentId: '2023-0001', name: 'John Doe', bloodType: 'O+', conditions: 'Asthma', lastCheckup: '2023-11-15', status: 'Cleared' },
-  { id: '2', studentId: '2023-0002', name: 'Jane Smith', bloodType: 'A-', conditions: 'None', lastCheckup: '2024-01-20', status: 'Cleared' },
-  { id: '3', studentId: '2023-0003', name: 'Mark Johnson', bloodType: 'B+', conditions: 'Allergies', lastCheckup: '2023-08-05', status: 'Pending Review' },
-  { id: '4', studentId: '2023-0004', name: 'Emily Davis', bloodType: 'AB+', conditions: 'Type 1 Diabetes', lastCheckup: '2024-02-10', status: 'Cleared' },
-  { id: '5', studentId: '2023-0005', name: 'Michael Brown', bloodType: 'O-', conditions: 'None', lastCheckup: '2022-12-01', status: 'Needs Update' },
-];
+const normalizeRecord = (record) => ({
+  id: record._id || record.id,
+  scope: record.scope || 'Standalone',
+  event: record.event || null,
+  studentId: record.studentId || '',
+  name: record.name || '',
+  bloodType: record.bloodType || '',
+  conditions: record.conditions || '',
+  lastCheckup: record.lastCheckup || '',
+  status: record.status || 'Pending Review',
+  documents: record.documents || [],
+  history: record.history || []
+});
 
 const MedicalRecordsManagement = () => {
-  const [records, setRecords] = useState(() => {
-    try {
-      const stored = localStorage.getItem('ccs_medical_records');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed.length > 0) return parsed;
-      }
-      localStorage.setItem('ccs_medical_records', JSON.stringify(mockMedicalRecords));
-      return mockMedicalRecords;
-    } catch {
-      localStorage.setItem('ccs_medical_records', JSON.stringify(mockMedicalRecords));
-      return mockMedicalRecords;
-    }
-  });
-
+  const [events, setEvents] = useState([]);
+  const [records, setRecords] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDocsModalOpen, setIsDocsModalOpen] = useState(false);
   const [currentDocs, setCurrentDocs] = useState([]);
   const [selectedStudentName, setSelectedStudentName] = useState('');
+  const [selectedRecordId, setSelectedRecordId] = useState('');
   const [formData, setFormData] = useState({
     id: null,
+    scope: 'Standalone',
+    event: '',
     studentId: '',
     name: '',
     bloodType: '',
@@ -45,10 +44,33 @@ const MedicalRecordsManagement = () => {
     status: 'Cleared'
   });
 
-  const saveToStorage = (updatedRecords) => {
-    localStorage.setItem('ccs_medical_records', JSON.stringify(updatedRecords));
-    setRecords(updatedRecords);
+  const fetchRecords = async () => {
+    try {
+      setLoading(true);
+      setErrorMessage('');
+      const response = await axios.get('/api/medical-records');
+      setRecords(response.data.map(normalizeRecord));
+    } catch (err) {
+      setErrorMessage(err.response?.data?.message || 'Failed to load medical records.');
+      setRecords([]);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const fetchEvents = async () => {
+    try {
+      const response = await axios.get('/api/events');
+      setEvents(response.data || []);
+    } catch (err) {
+      setEvents([]);
+    }
+  };
+
+  useEffect(() => {
+    fetchRecords();
+    fetchEvents();
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -57,10 +79,16 @@ const MedicalRecordsManagement = () => {
 
   const openModal = (record = null) => {
     if (record) {
-      setFormData(record);
+      setFormData({
+        ...record,
+        scope: record.scope || 'Standalone',
+        event: record.event?._id || record.event || ''
+      });
     } else {
       setFormData({
         id: null,
+        scope: 'Standalone',
+        event: '',
         studentId: '',
         name: '',
         bloodType: '',
@@ -75,64 +103,93 @@ const MedicalRecordsManagement = () => {
   const closeModal = () => setIsModalOpen(false);
 
   const openDocsModal = (record) => {
-    try {
-      const storedDocs = localStorage.getItem('ccs_medical_documents');
-      if (storedDocs) {
-        const allDocs = JSON.parse(storedDocs);
-        const myDocs = allDocs.filter(d => d.studentId === record.studentId);
-        setCurrentDocs(myDocs);
-      } else {
-        setCurrentDocs([]);
-      }
-    } catch (err) {
-      console.error('Error reading documents:', err);
-      setCurrentDocs([]);
-    }
+    setCurrentDocs(record.documents || []);
     setSelectedStudentName(record.name);
+    setSelectedRecordId(record.id);
     setIsDocsModalOpen(true);
   };
 
   const closeDocsModal = () => setIsDocsModalOpen(false);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    let updatedRecords;
-
-    if (formData.id) {
-      updatedRecords = records.map((r) => (r.id === formData.id ? formData : r));
-    } else {
-      updatedRecords = [...records, { ...formData, id: Date.now().toString() }];
+  const handleDownloadDocument = async (doc) => {
+    try {
+      const docId = doc?._id || doc?.id;
+      if (!selectedRecordId || !docId) return;
+      const response = await axios.get(`/api/medical-records/${selectedRecordId}/documents/${docId}/download`, {
+        responseType: 'blob'
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = window.document.createElement('a');
+      link.href = url;
+      link.download = doc.fileName || 'medical-document';
+      window.document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setErrorMessage(err.response?.data?.message || 'Failed to download document.');
     }
-
-    saveToStorage(updatedRecords);
-    closeModal();
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm("Are you sure you want to delete this medical record?")) {
-      const updatedRecords = records.filter((r) => r.id !== id);
-      saveToStorage(updatedRecords);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const payload = {
+        scope: formData.scope,
+        event: formData.scope === 'Event Requirement' ? formData.event : null,
+        studentId: formData.studentId,
+        name: formData.name,
+        bloodType: formData.bloodType,
+        conditions: formData.conditions,
+        lastCheckup: formData.lastCheckup,
+        status: formData.status
+      };
+
+      const response = formData.id
+        ? await axios.put(`/api/medical-records/${formData.id}`, payload)
+        : await axios.post('/api/medical-records', payload);
+
+      const saved = normalizeRecord(response.data);
+      setRecords((prev) => {
+        if (formData.id) {
+          return prev.map((record) => (record.id === saved.id ? saved : record));
+        }
+        return [...prev, saved];
+      });
+      closeModal();
+    } catch (err) {
+      setErrorMessage(err.response?.data?.message || 'Failed to save medical record.');
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this medical record?')) return;
+
+    try {
+      await axios.delete(`/api/medical-records/${id}`);
+      setRecords((prev) => prev.filter((record) => record.id !== id));
+    } catch (err) {
+      setErrorMessage(err.response?.data?.message || 'Failed to delete medical record.');
     }
   };
 
   const filteredRecords = useMemo(() => {
-    return records.filter(r => {
-      const matchesSearch = 
-        r.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        r.studentId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        r.conditions.toLowerCase().includes(searchQuery.toLowerCase());
-      
-      const matchesStatus = statusFilter === 'All' || r.status === statusFilter;
+    return records.filter((record) => {
+      const matchesSearch =
+        record.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        record.studentId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        record.conditions.toLowerCase().includes(searchQuery.toLowerCase());
 
+      const matchesStatus = statusFilter === 'All' || record.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
   }, [records, searchQuery, statusFilter]);
 
   const stats = {
     total: records.length,
-    cleared: records.filter(r => r.status === 'Cleared').length,
-    pending: records.filter(r => r.status === 'Pending Review').length,
-    needsUpdate: records.filter(r => r.status === 'Needs Update').length
+    cleared: records.filter((record) => record.status === 'Cleared').length,
+    pending: records.filter((record) => record.status === 'Pending Review').length,
+    needsUpdate: records.filter((record) => record.status === 'Needs Update').length
   };
 
   return (
@@ -144,6 +201,7 @@ const MedicalRecordsManagement = () => {
             <h2 style={{ margin: 0 }}>Medical Records Management</h2>
           </div>
           <p>Manage student health histories, clearances, and medical requirements securely.</p>
+          {errorMessage && <div style={{ marginTop: '12px', color: '#b91c1c' }}>{errorMessage}</div>}
         </div>
         <button className="add-btn" onClick={() => openModal()}>
           <Plus size={18} />
@@ -193,19 +251,19 @@ const MedicalRecordsManagement = () => {
       <div className="medical-controls">
         <div className="medical-search-wrapper">
           <Search size={18} className="search-icon" />
-          <input 
-            type="text" 
-            placeholder="Search by student name, ID, or condition..." 
+          <input
+            type="text"
+            placeholder="Search by student name, ID, or condition..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="medical-search-input"
           />
         </div>
-        
+
         <div className="medical-filter-wrapper">
           <Filter size={18} className="filter-icon" />
           <div className="medical-filter-pills">
-            {['All', 'Cleared', 'Pending Review', 'Needs Update'].map(status => (
+            {['All', 'Cleared', 'Pending Review', 'Needs Update'].map((status) => (
               <button
                 key={status}
                 onClick={() => setStatusFilter(status)}
@@ -219,7 +277,12 @@ const MedicalRecordsManagement = () => {
       </div>
 
       <div className="medical-list-wrapper">
-        {filteredRecords.length === 0 ? (
+        {loading ? (
+          <div className="medical-no-results">
+            <Activity size={40} className="empty-icon" />
+            <p>Loading medical records...</p>
+          </div>
+        ) : filteredRecords.length === 0 ? (
           <div className="medical-no-results">
             <Activity size={40} className="empty-icon" />
             <p>No medical records found matching your criteria.</p>
@@ -230,47 +293,54 @@ const MedicalRecordsManagement = () => {
               <tr>
                 <th>Student</th>
                 <th>Health Information</th>
+                <th>Record Type</th>
                 <th>Last Checkup</th>
                 <th>Clearance Status</th>
                 <th style={{ textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filteredRecords.map((r) => (
-                <tr key={r.id}>
+              {filteredRecords.map((record) => (
+                <tr key={record.id}>
                   <td>
                     <div className="student-info">
-                      <span className="student-name">{r.name}</span>
-                      <span className="student-id">{r.studentId}</span>
+                      <span className="student-name">{record.name}</span>
+                      <span className="student-id">{record.studentId}</span>
                     </div>
                   </td>
                   <td>
                     <div className="health-info">
                       <span className="blood-type">
-                         <Activity size={12} /> {r.bloodType || 'Unknown'}
+                        <Activity size={12} /> {record.bloodType || 'Unknown'}
                       </span>
-                      <span className="conditions">{r.conditions || 'None reported'}</span>
+                      <span className="conditions">{record.conditions || 'None reported'}</span>
                     </div>
                   </td>
                   <td>
                     <div className="student-info">
-                      <span className="student-name">{r.lastCheckup || 'N/A'}</span>
+                      <span className="student-name">{record.scope || 'Standalone'}</span>
+                      <span className="student-id">{record.event?.title || 'No linked event'}</span>
                     </div>
                   </td>
                   <td>
-                    <span className={`status-badge ${r.status?.toLowerCase().replace(' ', '-')}`}>
-                       {r.status}
+                    <div className="student-info">
+                      <span className="student-name">{record.lastCheckup || 'N/A'}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span className={`status-badge ${record.status?.toLowerCase().replace(' ', '-')}`}>
+                      {record.status}
                     </span>
                   </td>
                   <td>
                     <div className="actions-cell">
-                      <button className="table-action-btn view" title="View Documents" onClick={() => openDocsModal(r)}>
+                      <button className="table-action-btn view" title="View Documents" onClick={() => openDocsModal(record)}>
                         <FileText size={16} />
                       </button>
-                      <button className="table-action-btn edit" title="Edit Record" onClick={() => openModal(r)}>
+                      <button className="table-action-btn edit" title="Edit Record" onClick={() => openModal(record)}>
                         <Edit size={16} />
                       </button>
-                      <button className="table-action-btn delete" title="Delete Record" onClick={() => handleDelete(r.id)} style={{color: '#EF4444'}}>
+                      <button className="table-action-btn delete" title="Delete Record" onClick={() => handleDelete(record.id)} style={{ color: '#EF4444' }}>
                         <Trash2 size={16} />
                       </button>
                     </div>
@@ -302,7 +372,7 @@ const MedicalRecordsManagement = () => {
                   <input type="text" name="studentId" value={formData.studentId} onChange={handleInputChange} required placeholder="e.g. 2023-0001" />
                 </div>
               </div>
-              
+
               <div className="medical-form-row">
                 <div className="medical-form-group">
                   <label>Blood Type</label>
@@ -324,9 +394,32 @@ const MedicalRecordsManagement = () => {
                 </div>
               </div>
 
+              <div className="medical-form-row">
+                <div className="medical-form-group">
+                  <label>Record Type</label>
+                  <select name="scope" value={formData.scope} onChange={handleInputChange}>
+                    <option value="Standalone">Standalone</option>
+                    <option value="Event Requirement">Event Requirement</option>
+                  </select>
+                </div>
+                {formData.scope === 'Event Requirement' && (
+                  <div className="medical-form-group">
+                    <label>Event Requirement</label>
+                    <select name="event" value={formData.event} onChange={handleInputChange}>
+                      <option value="">Select an event...</option>
+                      {events.map((event) => (
+                        <option key={event._id || event.id} value={event._id || event.id}>
+                          {event.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+
               <div className="medical-form-group">
                 <label>Pre-existing Conditions / Allergies</label>
-                <textarea name="conditions" value={formData.conditions} onChange={handleInputChange} rows={3} placeholder="List any allergies, conditions, or medications (or 'None')..."></textarea>
+                <textarea name="conditions" value={formData.conditions} onChange={handleInputChange} rows={3} placeholder="List any allergies, conditions, or medications (or 'None')..." />
               </div>
 
               <div className="medical-form-group">
@@ -337,7 +430,7 @@ const MedicalRecordsManagement = () => {
                   <option value="Needs Update">Needs Update</option>
                 </select>
               </div>
-              
+
               <div className="medical-form-actions">
                 <button type="button" className="btn-secondary" onClick={closeModal}>Cancel</button>
                 <button type="submit" className="btn-primary">{formData.id ? 'Save Changes' : 'Add Record'}</button>
@@ -347,7 +440,6 @@ const MedicalRecordsManagement = () => {
         </div>
       )}
 
-      {/* View Documents Modal */}
       {isDocsModalOpen && (
         <div className="medical-modal-overlay">
           <div className="medical-modal-box">
@@ -365,8 +457,8 @@ const MedicalRecordsManagement = () => {
                 </div>
               ) : (
                 <div className="docs-list">
-                  {currentDocs.map(doc => (
-                    <div key={doc.id} className="doc-item">
+                  {currentDocs.map((doc) => (
+                    <div key={doc._id || doc.id} className="doc-item">
                       <div className="doc-info">
                         <FileText size={20} className="doc-icon" />
                         <div className="doc-details">
@@ -374,7 +466,7 @@ const MedicalRecordsManagement = () => {
                           <span className="doc-meta">{doc.uploadDate} • {doc.fileSize}</span>
                         </div>
                       </div>
-                      <button className="doc-download-btn" title="Download">
+                      <button className="doc-download-btn" title="Download" onClick={() => handleDownloadDocument(doc)}>
                         <Download size={18} />
                       </button>
                     </div>

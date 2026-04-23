@@ -8,6 +8,7 @@ const {
   deleteEvent,
   applyForEvent,
   cancelEventApplication,
+  reviewEventApplication,
 } = require("../controllers/eventController");
 const { protect, adminOrFaculty } = require("../middlewares/authMiddleware");
 
@@ -25,5 +26,8 @@ router.route("/:id/apply")
 
 router.route("/:id/cancel")
   .post(protect, cancelEventApplication);
+
+router.route("/:id/applications/:applicationId/review")
+  .put(protect, adminOrFaculty, reviewEventApplication);
 
 module.exports = router;

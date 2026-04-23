@@ -15,7 +15,27 @@ const normalizeEvent = (ev) => ({
   location: ev.location || '',
   maxParticipants: ev.maxParticipants || '',
   status: ev.status || 'Upcoming',
-  participants: ev.participants || []
+  participants: (ev.participants || []).map((participant) => ({
+    id: participant._id || participant.id || participant,
+    userId: participant.userId || '',
+    name: participant.name || '',
+    email: participant.email || '',
+    role: participant.role || ''
+  })),
+  applications: (ev.applications || []).map((app) => ({
+    id: app._id || app.id,
+    applicationStatus: app.applicationStatus || 'Pending',
+    role: app.role || 'Participant',
+    applicationDate: app.applicationDate || '',
+    remarks: app.remarks || '',
+    user: {
+      id: app.user?._id || app.user?.id || app.user,
+      userId: app.user?.userId || '',
+      name: app.user?.name || '',
+      email: app.user?.email || '',
+      role: app.user?.role || ''
+    }
+  }))
 });
 
 const EventManagement = () => {
@@ -43,6 +63,8 @@ const EventManagement = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isParticipantsModalOpen, setIsParticipantsModalOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null);
   const [formData, setFormData] = useState({
     id: null,
     title: '',
@@ -84,6 +106,30 @@ const EventManagement = () => {
   };
 
   const closeModal = () => setIsModalOpen(false);
+
+  const openParticipantsModal = (event) => {
+    setSelectedEvent(event);
+    setIsParticipantsModalOpen(true);
+  };
+
+  const closeParticipantsModal = () => {
+    setIsParticipantsModalOpen(false);
+    setSelectedEvent(null);
+  };
+
+  const handleReviewApplication = async (eventId, applicationId, status) => {
+    try {
+      const response = await axios.put(`/api/events/${eventId}/applications/${applicationId}/review`, { status });
+      const updatedEvent = normalizeEvent(response.data);
+      setEvents((prev) => prev.map((ev) => (ev.id === eventId ? updatedEvent : ev)));
+      if (selectedEvent && selectedEvent.id === eventId) {
+        setSelectedEvent(updatedEvent);
+      }
+    } catch (error) {
+      console.error('Failed to review application:', error);
+      setErrorMessage(error.response?.data?.message || 'Failed to review application.');
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -313,6 +359,9 @@ const EventManagement = () => {
                     </td>
                     <td>
                        <div className="actions-cell">
+                         <button className="table-action-btn view" title="View Applications" onClick={() => openParticipantsModal(ev)}>
+                           <Users size={16} />
+                         </button>
                          <button className="table-action-btn edit" title="Edit" onClick={() => openModal(ev)}>
                            <Edit size={16} />
                          </button>
@@ -383,6 +432,115 @@ const EventManagement = () => {
                 <button type="submit" className="btn-primary">{formData.id ? 'Save Changes' : 'Publish Event'}</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {isParticipantsModalOpen && selectedEvent && (
+        <div className="admin-modal-overlay">
+          <div className="admin-modal-box" style={{ maxWidth: '860px' }}>
+            <div className="admin-modal-header">
+              <h3>Applications & Participants: {selectedEvent.title}</h3>
+              <button className="modal-close-btn" onClick={closeParticipantsModal}>
+                <X size={24} />
+              </button>
+            </div>
+            <div style={{ padding: '0 24px 24px' }}>
+              {(() => {
+                const pendingApplications = (selectedEvent.applications || []).filter((application) => application.applicationStatus === 'Pending');
+                const rejectedApplications = (selectedEvent.applications || []).filter((application) => application.applicationStatus === 'Rejected');
+
+                return (
+                  <>
+                    <div style={{ marginBottom: '16px' }}>
+                      <strong>Pending Applications ({pendingApplications.length})</strong>
+                      <p style={{ margin: '6px 0 0', color: 'var(--text-muted)' }}>
+                        Only pending applications are listed here for approval.
+                      </p>
+                    </div>
+                    {pendingApplications.length === 0 ? (
+                      <div className="admin-no-results" style={{ padding: '12px 0 20px' }}>
+                        <p>No pending applications.</p>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'grid', gap: '10px', maxHeight: '260px', overflowY: 'auto', marginBottom: '18px' }}>
+                        {pendingApplications.map((application, index) => (
+                          <div key={application.id || index} style={{ padding: '12px 14px', border: '1px solid #e2e8f0', borderRadius: '12px', background: '#fff' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'flex-start' }}>
+                              <div>
+                                <strong style={{ display: 'block', marginBottom: '4px' }}>{application.user?.name || 'Unnamed Applicant'}</strong>
+                                <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{application.user?.userId || 'No user ID'}</div>
+                                {application.user?.email && <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{application.user.email}</div>}
+                              </div>
+                              <span className={`status-badge ${application.applicationStatus.toLowerCase()}`}>{application.applicationStatus}</span>
+                            </div>
+                            <div style={{ marginTop: '10px', display: 'flex', gap: '8px' }}>
+                              <button
+                                className="btn-primary"
+                                type="button"
+                                style={{ padding: '8px 12px' }}
+                                onClick={() => handleReviewApplication(selectedEvent.id, application.id, 'Approved')}
+                              >
+                                Approve
+                              </button>
+                              <button
+                                className="btn-secondary"
+                                type="button"
+                                style={{ padding: '8px 12px' }}
+                                onClick={() => handleReviewApplication(selectedEvent.id, application.id, 'Rejected')}
+                              >
+                                Reject
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <div style={{ marginBottom: '10px' }}>
+                      <strong>Rejected Applications ({rejectedApplications.length})</strong>
+                    </div>
+                    {rejectedApplications.length === 0 ? (
+                      <div className="admin-no-results" style={{ padding: '6px 0 12px' }}>
+                        <p>No rejected applications.</p>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'grid', gap: '8px', maxHeight: '160px', overflowY: 'auto', marginBottom: '18px' }}>
+                        {rejectedApplications.map((application, index) => (
+                          <div key={application.id || index} style={{ padding: '10px 12px', border: '1px solid #e2e8f0', borderRadius: '10px', background: '#fff' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px' }}>
+                              <div>
+                                <strong style={{ display: 'block' }}>{application.user?.name || 'Unnamed Applicant'}</strong>
+                                <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{application.user?.userId || 'No user ID'}</div>
+                              </div>
+                              <span className={`status-badge ${application.applicationStatus.toLowerCase()}`}>{application.applicationStatus}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+
+              <div style={{ marginBottom: '10px' }}>
+                <strong>Approved Participants ({selectedEvent.participants.length})</strong>
+              </div>
+              {selectedEvent.participants.length === 0 ? (
+                <div className="admin-no-results" style={{ padding: '6px 0 12px' }}>
+                  <p>No approved participants yet.</p>
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gap: '8px', maxHeight: '180px', overflowY: 'auto' }}>
+                  {selectedEvent.participants.map((participant, index) => (
+                    <div key={participant.id || index} style={{ padding: '10px 12px', border: '1px solid #e2e8f0', borderRadius: '10px', background: '#fff' }}>
+                      <strong style={{ display: 'block' }}>{participant.name || 'Unnamed Participant'}</strong>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{participant.userId || 'No user ID'}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

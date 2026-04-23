@@ -24,6 +24,7 @@ import ViolationManagement from './pages/management/ViolationManagement'
 import AchievementManagement from './pages/management/AchievementManagement'
 import AnnouncementManagement from './pages/management/AnnouncementManagement'
 import ClubsOrgsManagement from './pages/management/ClubsOrgsManagement'
+import SchoolYearSectionManagement from './pages/management/SchoolYearSectionManagement'
 import SessionGuard from './components/SessionGuard'
 import ForceSignoutGuard from './components/ForceSignoutGuard'
 import './App.css'
@@ -131,6 +132,7 @@ function App() {
             <Route path="/violation-management" element={<ViolationManagement />} />
             <Route path="/achievement-management" element={<AchievementManagement />} />
             <Route path="/medical-records-management" element={<MedicalRecordsManagement />} />
+            <Route path="/school-year-sections" element={<SchoolYearSectionManagement />} />
             
             {/* Admin Only Routes */}
             <Route path="/faculty-management" element={<FacultyManagement />} />

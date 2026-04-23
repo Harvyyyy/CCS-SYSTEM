@@ -1,5 +1,6 @@
 const StudentProfile = require("../models/StudentProfile");
 const User = require("../models/User");
+const Section = require("../models/Section");
 const mongoose = require("mongoose");
 
 const isValidObjectId = (value) => mongoose.Types.ObjectId.isValid(value);
@@ -19,12 +20,26 @@ const normalizeOptionalObjectId = (value) => {
   return isValidObjectId(value) ? value : undefined;
 };
 
+const formatSchoolYearLabel = (schoolYearSemester) => {
+  if (!schoolYearSemester) return "";
+  return `${schoolYearSemester.schoolYear} (${schoolYearSemester.semester})`;
+};
+
 // @desc    Get all students
 // @route   GET /api/students
 // @access  Private/Admin
 const getStudents = async (req, res) => {
   try {
-    const students = await StudentProfile.find().populate("user", "userId email name");
+    const students = await StudentProfile.find()
+      .populate("user", "userId email name")
+      .populate({
+        path: "section",
+        select: "sectionName yearLevel program schoolYearSemester",
+        populate: {
+          path: "schoolYearSemester",
+          select: "schoolYear semester isCurrent",
+        },
+      });
     res.json(students);
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
@@ -36,7 +51,16 @@ const getStudents = async (req, res) => {
 // @access  Private/Admin
 const getStudentById = async (req, res) => {
   try {
-    const student = await StudentProfile.findById(req.params.id).populate("user", "userId email name");
+    const student = await StudentProfile.findById(req.params.id)
+      .populate("user", "userId email name")
+      .populate({
+        path: "section",
+        select: "sectionName yearLevel program schoolYearSemester",
+        populate: {
+          path: "schoolYearSemester",
+          select: "schoolYear semester isCurrent",
+        },
+      });
     if (!student) {
       return res.status(404).json({ message: "Student profile not found" });
     }
@@ -53,7 +77,7 @@ const createStudent = async (req, res) => {
   try {
     const {
       userId, studentNumber, firstName, middleName, lastName, gender,
-      yearLevel, program, academicTrack, section, academicStatus, height,
+      yearLevel, schoolYear, program, academicTrack, section, academicStatus, height,
       weight, contactNumber, emergencyContactName, emergencyContactNumber,
       emergencyContactRelation, yearGraduated, email, password,
       achievements, skills, interests
@@ -86,6 +110,19 @@ const createStudent = async (req, res) => {
       return res.status(400).json({ message: "Student profile (or student number) already exists" });
     }
 
+    const normalizedSectionId = normalizeOptionalObjectId(section);
+    let resolvedSchoolYear = schoolYear;
+    let resolvedYearLevel = yearLevel;
+
+    if (normalizedSectionId) {
+      const sectionRecord = await Section.findById(normalizedSectionId).populate("schoolYearSemester", "schoolYear semester");
+      if (!sectionRecord) {
+        return res.status(400).json({ message: "Selected section not found" });
+      }
+      resolvedSchoolYear = formatSchoolYearLabel(sectionRecord.schoolYearSemester);
+      resolvedYearLevel = sectionRecord.yearLevel || resolvedYearLevel;
+    }
+
     const student = await StudentProfile.create({
       user: user._id,
       studentNumber,
@@ -93,10 +130,11 @@ const createStudent = async (req, res) => {
       middleName,
       lastName,
       gender,
-      yearLevel,
+      yearLevel: resolvedYearLevel,
+      schoolYear: resolvedSchoolYear,
       program,
       academicTrack: normalizeOptionalObjectId(academicTrack),
-      section: normalizeOptionalObjectId(section),
+      section: normalizedSectionId,
       academicStatus,
       height: height ? Number(height) : undefined,
       weight: weight ? Number(weight) : undefined,
@@ -110,7 +148,17 @@ const createStudent = async (req, res) => {
       interests: Array.isArray(interests) ? interests : (interests ? interests.split(',').map(s=>s.trim()) : []),
     });
 
-    const populated = await student.populate("user", "userId email name");
+    const populated = await student.populate([
+      { path: "user", select: "userId email name" },
+      {
+        path: "section",
+        select: "sectionName yearLevel program schoolYearSemester",
+        populate: {
+          path: "schoolYearSemester",
+          select: "schoolYear semester isCurrent",
+        },
+      },
+    ]);
     res.status(201).json(populated);
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
@@ -129,7 +177,7 @@ const updateStudent = async (req, res) => {
 
     const {
       userId, studentNumber, firstName, middleName, lastName, gender,
-      yearLevel, program, academicTrack, section, academicStatus, height,
+      yearLevel, schoolYear, program, academicTrack, section, academicStatus, height,
       weight, contactNumber, emergencyContactName, emergencyContactNumber,
       emergencyContactRelation, yearGraduated, email, achievements, skills, interests
     } = req.body;
@@ -151,7 +199,8 @@ const updateStudent = async (req, res) => {
     if (middleName !== undefined) student.middleName = middleName;
     if (lastName !== undefined) student.lastName = lastName;
     if (gender !== undefined) student.gender = gender;
-    if (yearLevel !== undefined) student.yearLevel = yearLevel;
+    if (yearLevel !== undefined && section === undefined) student.yearLevel = yearLevel;
+    if (schoolYear !== undefined && section === undefined) student.schoolYear = schoolYear;
     if (program !== undefined) student.program = program;
     
     if (academicTrack !== undefined) {
@@ -159,6 +208,15 @@ const updateStudent = async (req, res) => {
     }
     if (section !== undefined) {
       student.section = normalizeOptionalObjectId(section);
+
+      if (student.section) {
+        const sectionRecord = await Section.findById(student.section).populate("schoolYearSemester", "schoolYear semester");
+        if (!sectionRecord) {
+          return res.status(400).json({ message: "Selected section not found" });
+        }
+        student.schoolYear = formatSchoolYearLabel(sectionRecord?.schoolYearSemester);
+        student.yearLevel = sectionRecord.yearLevel || student.yearLevel;
+      }
     }
 
     if (student.academicTrack !== undefined && student.academicTrack !== null && !isValidObjectId(student.academicTrack)) {
@@ -189,7 +247,17 @@ const updateStudent = async (req, res) => {
     }
 
     const updated = await student.save();
-    const populated = await updated.populate("user", "userId email name");
+    const populated = await updated.populate([
+      { path: "user", select: "userId email name" },
+      {
+        path: "section",
+        select: "sectionName yearLevel program schoolYearSemester",
+        populate: {
+          path: "schoolYearSemester",
+          select: "schoolYear semester isCurrent",
+        },
+      },
+    ]);
     res.json(populated);
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
