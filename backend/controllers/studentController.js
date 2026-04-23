@@ -4,6 +4,21 @@ const mongoose = require("mongoose");
 
 const isValidObjectId = (value) => mongoose.Types.ObjectId.isValid(value);
 
+const normalizeTextField = (value) => {
+  if (value === undefined) return undefined;
+  if (value === null) return "";
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).trim()).filter(Boolean).join(", ");
+  }
+  return String(value).trim();
+};
+
+const normalizeOptionalObjectId = (value) => {
+  if (value === undefined) return undefined;
+  if (value === null || value === "") return undefined;
+  return isValidObjectId(value) ? value : undefined;
+};
+
 // @desc    Get all students
 // @route   GET /api/students
 // @access  Private/Admin
@@ -78,8 +93,8 @@ const createStudent = async (req, res) => {
       gender,
       yearLevel,
       program,
-      academicTrack: isValidObjectId(academicTrack) ? academicTrack : undefined,
-      section: isValidObjectId(section) ? section : undefined,
+      academicTrack: normalizeOptionalObjectId(academicTrack),
+      section: normalizeOptionalObjectId(section),
       academicStatus,
       height,
       weight,
@@ -88,9 +103,9 @@ const createStudent = async (req, res) => {
       emergencyContactNumber,
       emergencyContactRelation,
       yearGraduated,
-      achievements,
-      skills,
-      interests,
+      achievements: normalizeTextField(achievements),
+      skills: normalizeTextField(skills),
+      interests: normalizeTextField(interests),
     });
 
     const populated = await student.populate("user", "userId email name");
@@ -138,10 +153,17 @@ const updateStudent = async (req, res) => {
     if (program !== undefined) student.program = program;
     
     if (academicTrack !== undefined) {
-      student.academicTrack = isValidObjectId(academicTrack) ? academicTrack : undefined;
+      student.academicTrack = normalizeOptionalObjectId(academicTrack);
     }
     if (section !== undefined) {
-      student.section = isValidObjectId(section) ? section : undefined;
+      student.section = normalizeOptionalObjectId(section);
+    }
+
+    if (student.academicTrack !== undefined && student.academicTrack !== null && !isValidObjectId(student.academicTrack)) {
+      student.academicTrack = undefined;
+    }
+    if (student.section !== undefined && student.section !== null && !isValidObjectId(student.section)) {
+      student.section = undefined;
     }
     
     if (academicStatus !== undefined) student.academicStatus = academicStatus;
@@ -152,9 +174,9 @@ const updateStudent = async (req, res) => {
     if (emergencyContactNumber !== undefined) student.emergencyContactNumber = emergencyContactNumber;
     if (emergencyContactRelation !== undefined) student.emergencyContactRelation = emergencyContactRelation;
     if (yearGraduated !== undefined) student.yearGraduated = yearGraduated;
-    if (achievements !== undefined) student.achievements = achievements;
-    if (skills !== undefined) student.skills = skills;
-    if (interests !== undefined) student.interests = interests;
+    if (achievements !== undefined) student.achievements = normalizeTextField(achievements);
+    if (skills !== undefined) student.skills = normalizeTextField(skills);
+    if (interests !== undefined) student.interests = normalizeTextField(interests);
 
     if (email !== undefined) {
       const user = await User.findById(student.user);

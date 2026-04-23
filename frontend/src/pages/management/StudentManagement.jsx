@@ -46,6 +46,18 @@ const normalizeListField = (value) => {
   return '';
 };
 
+const normalizeTextField = (value) => {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).trim()).filter(Boolean).join(', ');
+  }
+
+  if (value === null || value === undefined) {
+    return '';
+  }
+
+  return String(value).trim();
+};
+
 
 const INITIAL_STUDENTS = [
   {
@@ -319,7 +331,7 @@ const StudentManagement = () => {
     e.preventDefault();
     const normalizedSkills = normalizeListField(formData.skills);
     const normalizedInterests = normalizeListField(formData.interests);
-    const normalizedAchievements = formData.achievements || '';
+    const normalizedAchievements = normalizeTextField(formData.achievements);
     if (editingStudent) {
       axios.put(`/api/students/${editingStudent.id}`, {
         userId: formData.userId,
