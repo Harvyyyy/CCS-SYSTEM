@@ -86,9 +86,9 @@ const normalizeRouter = (moduleExport, modulePath) => {
   );
 };
 
-const loadRouteModule = (modulePath) => {
+const loadRouteModule = (modulePath, loader) => {
   try {
-    const loaded = require(modulePath);
+    const loaded = loader();
     return normalizeRouter(loaded, modulePath);
   } catch (error) {
     const isLoadError = error && error.name !== "TypeError";
@@ -108,18 +108,19 @@ const loadRouteModule = (modulePath) => {
   }
 };
 
-const userRoutes = loadRouteModule("./routes/userRoutes");
-const authRoutes = loadRouteModule("./routes/authRoutes");
-const facultyRoutes = loadRouteModule("./routes/facultyRoutes");
-const studentRoutes = loadRouteModule("./routes/studentRoutes");
-const profileRoutes = loadRouteModule("./routes/profileRoutes");
-const courseRoutes = loadRouteModule("./routes/courseRoutes");
-const medicalRecordRoutes = loadRouteModule("./routes/medicalRecordRoutes");
-const academicRoutes = loadRouteModule("./routes/academicRoutes");
-const classScheduleRoutes = loadRouteModule("./routes/classScheduleRoutes");
-const violationRoutes = loadRouteModule("./routes/violationRoutes");
-const violationTypeRoutes = loadRouteModule("./routes/violationTypeRoutes");
-const eventRoutes = loadRouteModule("./routes/eventRoutes");
+
+const userRoutes = loadRouteModule("./routes/userRoutes", () => require("./routes/userRoutes"));
+const authRoutes = loadRouteModule("./routes/authRoutes", () => require("./routes/authRoutes"));
+const facultyRoutes = loadRouteModule("./routes/facultyRoutes", () => require("./routes/facultyRoutes"));
+const studentRoutes = loadRouteModule("./routes/studentRoutes", () => require("./routes/studentRoutes"));
+const profileRoutes = loadRouteModule("./routes/profileRoutes", () => require("./routes/profileRoutes"));
+const courseRoutes = loadRouteModule("./routes/courseRoutes", () => require("./routes/courseRoutes"));
+const medicalRecordRoutes = loadRouteModule("./routes/medicalRecordRoutes", () => require("./routes/medicalRecordRoutes"));
+const academicRoutes = loadRouteModule("./routes/academicRoutes", () => require("./routes/academicRoutes"));
+const classScheduleRoutes = loadRouteModule("./routes/classScheduleRoutes", () => require("./routes/classScheduleRoutes"));
+const violationRoutes = loadRouteModule("./routes/violationRoutes", () => require("./routes/violationRoutes"));
+const violationTypeRoutes = loadRouteModule("./routes/violationTypeRoutes", () => require("./routes/violationTypeRoutes"));
+const eventRoutes = loadRouteModule("./routes/eventRoutes", () => require("./routes/eventRoutes"));
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/faculty", facultyRoutes);
