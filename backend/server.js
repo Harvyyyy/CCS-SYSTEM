@@ -28,55 +28,18 @@ const classScheduleRoutes = require("./routes/classScheduleRoutes");
 const violationRoutes = require("./routes/violationRoutes");
 const violationTypeRoutes = require("./routes/violationTypeRoutes");
 const eventRoutes = require("./routes/eventRoutes");
-
-const resolveRouteHandler = (routeModule, routeName) => {
-  if (typeof routeModule === "function") {
-    return routeModule;
-  }
-
-  if (routeModule && typeof routeModule === "object") {
-    const functionCandidates = [
-      routeModule.default,
-      routeModule.router,
-      routeModule.routes,
-      routeModule[routeName],
-    ];
-
-    const exportedFunction = functionCandidates.find((candidate) => typeof candidate === "function");
-    if (exportedFunction) {
-      return exportedFunction;
-    }
-
-    // Some bundlers/runtime bridges return router-like objects that are not directly callable.
-    // Adapt them to Express middleware if they expose `.handle(req,res,next)`.
-    if (typeof routeModule.handle === "function") {
-      return (req, res, next) => routeModule.handle(req, res, next);
-    }
-  }
-
-  const receivedType = routeModule === null ? "null" : typeof routeModule;
-  const keys = routeModule && typeof routeModule === "object" ? Object.keys(routeModule).join(", ") : "";
-  throw new TypeError(
-    `Invalid route handler for ${routeName}: expected function, received ${receivedType}${keys ? ` (keys: ${keys})` : ""}`
-  );
-};
-
-const mountRoute = (routePath, routeModule, routeName) => {
-  app.use(routePath, resolveRouteHandler(routeModule, routeName));
-};
-
-mountRoute("/api/users", userRoutes, "userRoutes");
-mountRoute("/api/auth", authRoutes, "authRoutes");
-mountRoute("/api/faculty", facultyRoutes, "facultyRoutes");
-mountRoute("/api/students", studentRoutes, "studentRoutes");
-mountRoute("/api/profile", profileRoutes, "profileRoutes");
-mountRoute("/api/courses", courseRoutes, "courseRoutes");
-mountRoute("/api/medical-records", medicalRecordRoutes, "medicalRecordRoutes");
-mountRoute("/api/academic", academicRoutes, "academicRoutes");
-mountRoute("/api/class-schedules", classScheduleRoutes, "classScheduleRoutes");
-mountRoute("/api/violations", violationRoutes, "violationRoutes");
-mountRoute("/api/violation-types", violationTypeRoutes, "violationTypeRoutes");
-mountRoute("/api/events", eventRoutes, "eventRoutes");
+app.use("/api/users", userRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/faculty", facultyRoutes);
+app.use("/api/students", studentRoutes);
+app.use("/api/profile", profileRoutes);
+app.use("/api/courses", courseRoutes);
+app.use("/api/medical-records", medicalRecordRoutes);
+app.use("/api/academic", academicRoutes);
+app.use("/api/class-schedules", classScheduleRoutes);
+app.use("/api/violations", violationRoutes);
+app.use("/api/violation-types", violationTypeRoutes);
+app.use("/api/events", eventRoutes);
 
 const PORT = process.env.PORT || 5000;
 
