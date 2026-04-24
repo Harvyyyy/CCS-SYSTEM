@@ -12,8 +12,17 @@ const normalizeEvent = (ev) => ({
   location: ev.location || '',
   maxParticipants: ev.maxParticipants || 0,
   status: ev.status || 'Upcoming',
-  participants: ev.participants || []
+  participants: ev.participants || [],
+  applications: ev.applications || []
 });
+
+const getCurrentApplication = (event, userId) => {
+  if (!userId) return null;
+  return (event.applications || []).find((app) => {
+    const appUserId = app?.user?._id || app?.user;
+    return String(appUserId) === String(userId);
+  }) || null;
+};
 
 const Events = () => {
   const [events, setEvents] = useState([]);
@@ -98,7 +107,10 @@ const Events = () => {
     total: events.length,
     upcoming: events.filter(e => e.status === 'Upcoming').length,
     ongoing: events.filter(e => e.status === 'Ongoing').length,
-    joined: events.filter(e => (e.participants || []).includes(currentStudentId)).length
+    joined: events.filter(e => {
+      const application = getCurrentApplication(e, currentStudentId);
+      return application?.applicationStatus === 'Approved';
+    }).length
   };
 
   return (
@@ -185,7 +197,11 @@ const Events = () => {
         ) : (
           filteredEvents.map((ev) => {
             const participants = ev.participants || [];
-            const hasApplied = participants.includes(currentStudentId);
+            const currentApplication = getCurrentApplication(ev, currentStudentId);
+            const applicationStatus = currentApplication?.applicationStatus || null;
+            const isPendingApproval = applicationStatus === 'Pending';
+            const isApproved = applicationStatus === 'Approved';
+            const isRejected = applicationStatus === 'Rejected';
             const maxParticipantsNum = parseInt(ev.maxParticipants) || 0;
             const isFull = maxParticipantsNum > 0 && participants.length >= maxParticipantsNum;
             const isUpcoming = ev.status === 'Upcoming';
@@ -241,9 +257,13 @@ const Events = () => {
                 </div>
 
                 <div className="event-actions">
-                  {hasApplied ? (
+                  {isApproved ? (
                     <button className="apply-btn cancel" onClick={() => handleCancelApplication(ev.id)}>
-                      Cancel Registration
+                      Cancel Approved Slot
+                    </button>
+                  ) : isPendingApproval ? (
+                    <button className="apply-btn" disabled>
+                      Pending Approval
                     </button>
                   ) : (
                     <button 
@@ -251,7 +271,7 @@ const Events = () => {
                       onClick={() => handleApply(ev.id)}
                       disabled={isFull || !isUpcoming}
                     >
-                      {isFull ? 'Event Full' : !isUpcoming ? 'Registration Closed' : 'Join Event'}
+                      {isRejected ? 'Apply Again' : isFull ? 'Event Full' : !isUpcoming ? 'Registration Closed' : 'Apply to Join'}
                     </button>
                   )}
                 </div>

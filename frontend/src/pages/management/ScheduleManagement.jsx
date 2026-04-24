@@ -1,137 +1,219 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import axios from 'axios';
 import { Calendar, Clock, MapPin, Users, BookOpen, Plus, Search, Edit, Trash2, X, Filter } from 'lucide-react';
 import './ScheduleManagement.css';
 
+const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+const DEFAULT_FORM_DATA = {
+  schoolYearSemester: '',
+  section: '',
+  course: '',
+  faculty: '',
+  roomName: '',
+  dayOfWeek: 'Monday',
+  timeStart: '',
+  timeEnd: '',
+  scheduleType: 'Lecture',
+};
+
+const formatSchoolYearLabel = (record) => {
+  if (!record) return '';
+  return `${record.schoolYear} (${record.semester})`;
+};
+
+const formatFacultyName = (faculty) => {
+  if (!faculty) return '';
+  const full = [faculty.firstName, faculty.middleName, faculty.lastName].filter(Boolean).join(' ').trim();
+  if (full) return full;
+  return faculty.user?.name || faculty.employeeIdNumber || '';
+};
+
 const ScheduleManagement = () => {
-  const [schedules, setSchedules] = useState([
-    {
-      id: 1,
-      purpose: 'Regular Class',
-      subject: 'Data Structures and Algorithms',
-      courseCode: 'IT-201',
-      section: 'BSIT-2A',
-      instructor: 'Dr. John Doe',
-      room: 'Lab 1',
-      day: ['Monday', 'Wednesday'],
-      startTime: '08:00',
-      endTime: '11:00'
-    },
-    {
-      id: 2,
-      purpose: 'Examination',
-      subject: 'Web Technologies',
-      courseCode: 'IT-301',
-      section: 'BSIT-3A',
-      instructor: 'Prof. Jane Smith',
-      room: 'Room 304',
-      day: ['Tuesday'],
-      startTime: '13:00',
-      endTime: '16:00'
-    }
-  ]);
+  const [schedules, setSchedules] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const [schoolYearOptions, setSchoolYearOptions] = useState([]);
+  const [sectionOptions, setSectionOptions] = useState([]);
+  const [courseOptions, setCourseOptions] = useState([]);
+  const [facultyOptions, setFacultyOptions] = useState([]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingSchedule, setEditingSchedule] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterPurpose, setFilterPurpose] = useState('All');
+  const [filterType, setFilterType] = useState('All');
   const [filterDay, setFilterDay] = useState('All');
   const [sortBy, setSortBy] = useState('time');
-  const [formData, setFormData] = useState({
-    purpose: 'Regular Class',
-    subject: '',
-    courseCode: '',
-    section: '',
-    instructor: '',
-    room: '',
-    day: [],
-    startTime: '',
-    endTime: ''
+  const [formData, setFormData] = useState(DEFAULT_FORM_DATA);
+
+  const mapSchedule = (item) => ({
+    id: item._id || item.id,
+    schoolYearSemester: item.schoolYearSemester?._id || item.schoolYearSemester || '',
+    schoolYearLabel: formatSchoolYearLabel(item.schoolYearSemester),
+    section: item.section?._id || item.section || '',
+    sectionName: item.section?.sectionName || '',
+    sectionYearLevel: item.section?.yearLevel || '',
+    course: item.course?._id || item.course || '',
+    courseCode: item.course?.code || '',
+    subject: item.course?.desc || '',
+    faculty: item.faculty?._id || item.faculty || '',
+    facultyName: formatFacultyName(item.faculty),
+    roomName: item.roomName || '',
+    dayOfWeek: item.dayOfWeek || '',
+    timeStart: item.timeStart || '',
+    timeEnd: item.timeEnd || '',
+    scheduleType: item.scheduleType || 'Lecture',
   });
 
-  const filteredSchedules = schedules.filter(schedule => {
-    const matchesSearch = schedule.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          schedule.section.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          schedule.room.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesPurpose = filterPurpose === 'All' || schedule.purpose === filterPurpose;
-    const matchesDay = filterDay === 'All' || schedule.day.includes(filterDay);
-    
-    return matchesSearch && matchesPurpose && matchesDay;
-  }).sort((a, b) => {
-    if (sortBy === 'time') {
-      const days = { 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6, 'Sunday': 7 };
-      // Sort by the earliest day in the array
-      const aEarliestDay = Math.min(...a.day.map(d => days[d]));
-      const bEarliestDay = Math.min(...b.day.map(d => days[d]));
-      
-      if (aEarliestDay !== bEarliestDay) {
-        return aEarliestDay - bEarliestDay;
-      }
-      return a.startTime.localeCompare(b.startTime);
-    } else if (sortBy === 'subject_asc') {
-      return a.subject.localeCompare(b.subject);
-    } else if (sortBy === 'subject_desc') {
-      return b.subject.localeCompare(a.subject);
-    } else if (sortBy === 'room_asc') {
-      return a.room.localeCompare(b.room);
+  const loadSchedules = async () => {
+    try {
+      setLoading(true);
+      setErrorMessage('');
+      const response = await axios.get('/api/class-schedules');
+      setSchedules((response.data || []).map(mapSchedule));
+    } catch (err) {
+      console.error('Failed to load class schedules:', err);
+      setErrorMessage(err.response?.data?.message || 'Failed to load class schedules.');
+      setSchedules([]);
+    } finally {
+      setLoading(false);
     }
-    return 0;
-  });
+  };
+
+  const loadOptions = async () => {
+    try {
+      const response = await axios.get('/api/class-schedules/options');
+      setSchoolYearOptions(response.data?.schoolYears || []);
+      setSectionOptions(response.data?.sections || []);
+      setCourseOptions(response.data?.courses || []);
+      setFacultyOptions(response.data?.faculty || []);
+    } catch (err) {
+      console.error('Failed to load schedule options:', err);
+      setErrorMessage(err.response?.data?.message || 'Failed to load schedule options.');
+    }
+  };
+
+  useEffect(() => {
+    loadSchedules();
+    loadOptions();
+  }, []);
+
+  const filteredSchedules = useMemo(() => {
+    const dayOrder = { Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5, Saturday: 6, Sunday: 7 };
+
+    return schedules
+      .filter((schedule) => {
+        const needle = searchTerm.toLowerCase();
+        const matchesSearch =
+          schedule.subject.toLowerCase().includes(needle) ||
+          schedule.courseCode.toLowerCase().includes(needle) ||
+          schedule.sectionName.toLowerCase().includes(needle) ||
+          schedule.roomName.toLowerCase().includes(needle) ||
+          schedule.facultyName.toLowerCase().includes(needle);
+        const matchesType = filterType === 'All' || schedule.scheduleType === filterType;
+        const matchesDay = filterDay === 'All' || schedule.dayOfWeek === filterDay;
+        return matchesSearch && matchesType && matchesDay;
+      })
+      .sort((a, b) => {
+        if (sortBy === 'time') {
+          const dayDiff = (dayOrder[a.dayOfWeek] || 99) - (dayOrder[b.dayOfWeek] || 99);
+          if (dayDiff !== 0) return dayDiff;
+          return a.timeStart.localeCompare(b.timeStart);
+        }
+        if (sortBy === 'subject_asc') return a.subject.localeCompare(b.subject);
+        if (sortBy === 'subject_desc') return b.subject.localeCompare(a.subject);
+        if (sortBy === 'room_asc') return a.roomName.localeCompare(b.roomName);
+        return 0;
+      });
+  }, [schedules, searchTerm, filterType, filterDay, sortBy]);
+
+  const openCreateModal = () => {
+    setEditingSchedule(null);
+    setFormData(DEFAULT_FORM_DATA);
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (schedule) => {
+    setEditingSchedule(schedule);
+    setFormData({
+      schoolYearSemester: schedule.schoolYearSemester || '',
+      section: schedule.section || '',
+      course: schedule.course || '',
+      faculty: schedule.faculty || '',
+      roomName: schedule.roomName || '',
+      dayOfWeek: schedule.dayOfWeek || 'Monday',
+      timeStart: schedule.timeStart || '',
+      timeEnd: schedule.timeEnd || '',
+      scheduleType: schedule.scheduleType || 'Lecture',
+    });
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setEditingSchedule(null);
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleDayToggle = (day) => {
-    setFormData(prev => {
-      const isSelected = prev.day.includes(day);
-      if (isSelected) {
-        return { ...prev, day: prev.day.filter(d => d !== day) };
-      } else {
-        return { ...prev, day: [...prev.day, day] };
-      }
-    });
-  };
-
-  const handleAddSchedule = (e) => {
-    e.preventDefault();
-    if (formData.day.length === 0) {
-      alert("Please select at least one day.");
+    if (name === 'schoolYearSemester') {
+      setFormData((prev) => ({ ...prev, schoolYearSemester: value, section: '' }));
       return;
     }
-    const newSchedule = {
-      ...formData,
-      id: schedules.length + 1
-    };
-    setSchedules([...schedules, newSchedule]);
-    setIsModalOpen(false);
-    setFormData({
-      purpose: 'Regular Class',
-      subject: '',
-      courseCode: '',
-      section: '',
-      instructor: '',
-      room: '',
-      day: [],
-      startTime: '',
-      endTime: ''
-    });
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleDelete = (id) => {
-    setSchedules(schedules.filter(s => s.id !== id));
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setErrorMessage('');
+    try {
+      if (editingSchedule) {
+        await axios.put(`/api/class-schedules/${editingSchedule.id}`, formData);
+      } else {
+        await axios.post('/api/class-schedules', formData);
+      }
+
+      await loadSchedules();
+      closeModal();
+    } catch (err) {
+      console.error('Failed to save class schedule:', err);
+      setErrorMessage(err.response?.data?.message || 'Failed to save class schedule.');
+    }
   };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this schedule?')) return;
+    try {
+      await axios.delete(`/api/class-schedules/${id}`);
+      await loadSchedules();
+    } catch (err) {
+      console.error('Failed to delete class schedule:', err);
+      setErrorMessage(err.response?.data?.message || 'Failed to delete class schedule.');
+    }
+  };
+
+  const filteredSectionOptions = sectionOptions.filter(
+    (section) => !formData.schoolYearSemester || section.schoolYearSemester?._id === formData.schoolYearSemester
+  );
 
   return (
     <div className="schedule-management-container">
+      {errorMessage && (
+        <div className="sm-empty-state" style={{ marginBottom: '16px', color: '#b91c1c' }}>
+          {errorMessage}
+        </div>
+      )}
+
       <div className="schedule-header">
         <div className="schedule-header-text">
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
             <Clock size={28} color="var(--primary-color)" />
             <h1 style={{ margin: 0 }}>Schedule Management</h1>
           </div>
-          <p>Organize classes, sections, and venues efficiently</p>
+          <p>Manage class schedules by school year, section, course, faculty, room, and time slot.</p>
         </div>
-        <button className="btn-primary" onClick={() => setIsModalOpen(true)}>
+        <button className="btn-primary" onClick={openCreateModal}>
           <Plus size={18} />
           New Schedule
         </button>
@@ -140,9 +222,9 @@ const ScheduleManagement = () => {
       <div className="schedule-controls">
         <div className="search-bar">
           <Search size={18} className="search-icon" />
-          <input 
-            type="text" 
-            placeholder="Search subject, section, or room..." 
+          <input
+            type="text"
+            placeholder="Search course, section, faculty, or room..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -150,74 +232,81 @@ const ScheduleManagement = () => {
         <div className="filter-sort-controls">
           <div className="control-group">
             <Filter size={16} className="control-icon" />
-            <select value={filterPurpose} onChange={(e) => setFilterPurpose(e.target.value)} className="control-select">
-              <option value="All">All Purposes</option>
-              <option value="Regular Class">Regular Class</option>
-              <option value="Examination">Examination</option>
-              <option value="Meeting">Meeting</option>
-              <option value="Special Activity">Special Activity</option>
-              <option value="Maintenance">Maintenance</option>
-              <option value="Other">Other</option>
+            <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="control-select">
+              <option value="All">All Types</option>
+              <option value="Lecture">Lecture</option>
+              <option value="Laboratory">Laboratory</option>
             </select>
           </div>
-          
+
           <div className="control-group">
             <Calendar size={16} className="control-icon" />
             <select value={filterDay} onChange={(e) => setFilterDay(e.target.value)} className="control-select">
               <option value="All">All Days</option>
-              <option value="Monday">Monday</option>
-              <option value="Tuesday">Tuesday</option>
-              <option value="Wednesday">Wednesday</option>
-              <option value="Thursday">Thursday</option>
-              <option value="Friday">Friday</option>
-              <option value="Saturday">Saturday</option>
+              {DAYS.map((day) => (
+                <option key={day} value={day}>
+                  {day}
+                </option>
+              ))}
             </select>
           </div>
 
           <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="control-select sort-select">
             <option value="time">Sort by Time</option>
-            <option value="subject_asc">Subject (A-Z)</option>
-            <option value="subject_desc">Subject (Z-A)</option>
+            <option value="subject_asc">Course (A-Z)</option>
+            <option value="subject_desc">Course (Z-A)</option>
             <option value="room_asc">Room (A-Z)</option>
           </select>
         </div>
       </div>
 
       <div className="schedule-grid">
-        {filteredSchedules.map(schedule => (
+        {!loading && filteredSchedules.length === 0 && (
+          <div className="sm-empty-state">No class schedules found.</div>
+        )}
+
+        {filteredSchedules.map((schedule) => (
           <div className="schedule-card" key={schedule.id}>
             <div className="schedule-card-header">
-              <div className="course-code">{schedule.courseCode}</div>
+              <div className="course-code">{schedule.courseCode || 'N/A'}</div>
               <div className="schedule-badges">
-                <div className={`purpose-badge ${schedule.purpose.replace(/\s+/g, '-').toLowerCase()}`}>
-                  {schedule.purpose}
-                </div>
-                <div className="section-badge">{schedule.section}</div>
+                <div className={`purpose-badge ${schedule.scheduleType.toLowerCase()}`}>{schedule.scheduleType}</div>
+                <div className="section-badge">{schedule.sectionName}</div>
               </div>
             </div>
-            <h3 className="subject-title">{schedule.subject}</h3>
-            
+            <h3 className="subject-title">{schedule.subject || 'Untitled Course'}</h3>
+
             <div className="schedule-details">
               <div className="detail-item">
                 <Calendar size={16} />
-                <span>{schedule.day.join(', ')}</span>
+                <span>
+                  {schedule.dayOfWeek} {schedule.schoolYearLabel ? `• ${schedule.schoolYearLabel}` : ''}
+                </span>
               </div>
               <div className="detail-item">
                 <Clock size={16} />
-                <span>{schedule.startTime} - {schedule.endTime}</span>
+                <span>
+                  {schedule.timeStart} - {schedule.timeEnd}
+                </span>
               </div>
               <div className="detail-item">
                 <MapPin size={16} />
-                <span>{schedule.room}</span>
+                <span>{schedule.roomName}</span>
               </div>
               <div className="detail-item">
                 <Users size={16} />
-                <span>{schedule.instructor}</span>
+                <span>{schedule.facultyName}</span>
+              </div>
+              <div className="detail-item">
+                <BookOpen size={16} />
+                <span>{schedule.sectionYearLevel ? `${schedule.sectionYearLevel} • ` : ''}{schedule.sectionName}</span>
               </div>
             </div>
 
             <div className="schedule-card-actions">
-              <button className="btn-icon edit" title="Edit"><Edit size={16} /></button>
+              <button className="btn-icon edit" title="Edit" onClick={() => openEditModal(schedule)}>
+                <Edit size={16} />
+              </button>
               <button className="btn-icon delete" title="Delete" onClick={() => handleDelete(schedule.id)}>
                 <Trash2 size={16} />
               </button>
@@ -230,88 +319,117 @@ const ScheduleManagement = () => {
         <div className="modal-overlay">
           <div className="modal-content">
             <div className="modal-header">
-              <h2>Add New Schedule</h2>
-              <button className="btn-close" onClick={() => setIsModalOpen(false)}>
+              <h2>{editingSchedule ? 'Edit Class Schedule' : 'Add Class Schedule'}</h2>
+              <button className="btn-close" onClick={closeModal}>
                 <X size={20} />
               </button>
             </div>
-            
-            <form onSubmit={handleAddSchedule} className="schedule-form">
+
+            <form onSubmit={handleSubmit} className="schedule-form">
               <div className="form-group-row">
-                <div className="form-group full-width">
-                  <label>Intended Purpose</label>
-                  <select name="purpose" value={formData.purpose} onChange={handleInputChange}>
-                    <option value="Regular Class">Regular Class</option>
-                    <option value="Examination">Examination</option>
-                    <option value="Meeting">Meeting</option>
-                    <option value="Special Activity">Special Activity</option>
-                    <option value="Maintenance">Maintenance</option>
-                    <option value="Other">Other</option>
+                <div className="form-group">
+                  <label>School Year / Semester</label>
+                  <select
+                    name="schoolYearSemester"
+                    value={formData.schoolYearSemester}
+                    onChange={handleInputChange}
+                    required
+                  >
+                    <option value="">Select school year</option>
+                    {schoolYearOptions.map((item) => (
+                      <option key={item._id} value={item._id}>
+                        {formatSchoolYearLabel(item)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Section</label>
+                  <select name="section" value={formData.section} onChange={handleInputChange} required>
+                    <option value="">Select section</option>
+                    {filteredSectionOptions.map((item) => (
+                      <option key={item._id} value={item._id}>
+                        {`${item.sectionName} (${item.yearLevel || 'No year'} • ${item.schoolYearLabel})`}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
 
               <div className="form-group-row">
                 <div className="form-group">
-                  <label>Course Code</label>
-                  <input type="text" name="courseCode" required={formData.purpose === 'Regular Class' || formData.purpose === 'Examination'} value={formData.courseCode} onChange={handleInputChange} placeholder="e.g. IT-101" />
-                </div>
-                <div className="form-group">
-                  <label>Subject / Event Title</label>
-                  <input type="text" name="subject" required value={formData.subject} onChange={handleInputChange} placeholder="e.g. Introduction to Programming" />
-                </div>
-              </div>
-
-              <div className="form-group-row">
-                <div className="form-group">
-                  <label>Section / Attendees</label>
-                  <input type="text" name="section" required value={formData.section} onChange={handleInputChange} placeholder="e.g. BSIT-1A or All Faculty" />
-                </div>
-                <div className="form-group">
-                  <label>Instructor / Coordinator</label>
-                  <input type="text" name="instructor" required value={formData.instructor} onChange={handleInputChange} placeholder="Person in charge" />
-                </div>
-              </div>
-
-              <div className="form-group-row">
-                <div className="form-group full-width">
-                  <label>Days</label>
-                  <div className="day-selector-group">
-                    {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(day => (
-                      <button
-                        key={day}
-                        type="button"
-                        className={`day-selector-btn ${formData.day.includes(day) ? 'active' : ''}`}
-                        onClick={() => handleDayToggle(day)}
-                      >
-                        {day.substring(0, 3)}
-                      </button>
+                  <label>Course</label>
+                  <select name="course" value={formData.course} onChange={handleInputChange} required>
+                    <option value="">Select course</option>
+                    {courseOptions.map((course) => (
+                      <option key={course._id} value={course._id}>
+                        {course.code} - {course.desc}
+                      </option>
                     ))}
-                  </div>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Faculty</label>
+                  <select name="faculty" value={formData.faculty} onChange={handleInputChange} required>
+                    <option value="">Select faculty</option>
+                    {facultyOptions.map((faculty) => (
+                      <option key={faculty._id} value={faculty._id}>
+                        {formatFacultyName(faculty)}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
               <div className="form-group-row">
                 <div className="form-group">
-                  <label>Room / Place</label>
-                  <input type="text" name="room" required value={formData.room} onChange={handleInputChange} placeholder="e.g. Lab 1" />
+                  <label>Room</label>
+                  <input
+                    type="text"
+                    name="roomName"
+                    value={formData.roomName}
+                    onChange={handleInputChange}
+                    placeholder="e.g. Room 304 / Lab 1"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Schedule Type</label>
+                  <select name="scheduleType" value={formData.scheduleType} onChange={handleInputChange} required>
+                    <option value="Lecture">Lecture</option>
+                    <option value="Laboratory">Laboratory</option>
+                  </select>
                 </div>
               </div>
 
               <div className="form-group-row">
+                <div className="form-group">
+                  <label>Day of Week</label>
+                  <select name="dayOfWeek" value={formData.dayOfWeek} onChange={handleInputChange} required>
+                    {DAYS.map((day) => (
+                      <option key={day} value={day}>
+                        {day}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 <div className="form-group">
                   <label>Start Time</label>
-                  <input type="time" name="startTime" required value={formData.startTime} onChange={handleInputChange} />
+                  <input type="time" name="timeStart" value={formData.timeStart} onChange={handleInputChange} required />
                 </div>
                 <div className="form-group">
                   <label>End Time</label>
-                  <input type="time" name="endTime" required value={formData.endTime} onChange={handleInputChange} />
+                  <input type="time" name="timeEnd" value={formData.timeEnd} onChange={handleInputChange} required />
                 </div>
               </div>
 
               <div className="form-actions">
-                <button type="button" className="btn-secondary" onClick={() => setIsModalOpen(false)}>Cancel</button>
-                <button type="submit" className="btn-primary">Save Schedule</button>
+                <button type="button" className="btn-secondary" onClick={closeModal}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary">
+                  {editingSchedule ? 'Update Schedule' : 'Save Schedule'}
+                </button>
               </div>
             </form>
           </div>

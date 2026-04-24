@@ -83,6 +83,7 @@ const normalizeProfileResponse = (profile, role) => {
     lastName: profile.lastName || '',
     gender: profile.gender || 'N/A',
     yearLevel: profile.yearLevel || 'N/A',
+    schoolYear: profile.schoolYear || '',
     program: profile.program || 'N/A',
     academicTrack: profile.academicTrack || '',
     section: profile.section || '',
@@ -115,6 +116,7 @@ const MyProfile = ({ studentData = null, readOnly = false }) => {
       lastName: 'Penaflor',
       gender: 'Male',
       yearLevel: "4th Year",
+      schoolYear: '2025-2026',
       program: "BSIT",
       academicTrack: 'Web Development',
       section: "IT-A",
@@ -231,6 +233,7 @@ const MyProfile = ({ studentData = null, readOnly = false }) => {
         lastName: formData.lastName,
         gender: formData.gender,
         yearLevel: formData.yearLevel,
+        schoolYear: formData.schoolYear,
         program: formData.program,
         academicStatus: (formData.academicStatus || '').toLowerCase(),
         height: formData.height,
@@ -375,6 +378,12 @@ const MyProfile = ({ studentData = null, readOnly = false }) => {
                 <span className="info-value">{student.yearLevel} - {student.section}</span>
               </div>
             )}
+            {userRole !== 'Faculty' && (
+              <div className="profile-info-item">
+                <span className="info-label">School Year</span>
+                <span className="info-value">{student.schoolYear || 'N/A'}</span>
+              </div>
+            )}
             <div className="profile-info-item">
               <span className="info-label">{userRole === 'Faculty' ? 'Position' : 'Academic Track'}</span>
               <span className="info-value">{student.academicTrack || 'N/A'}</span>
@@ -516,6 +525,10 @@ const MyProfile = ({ studentData = null, readOnly = false }) => {
                     <div className="form-group">
                       <label>Emergency Number</label>
                       <input type="text" name="emergencyNumber" value={formData.emergencyNumber || ''} onChange={handleInputChange} />
+                    </div>
+                    <div className="form-group">
+                      <label>School Year (Optional)</label>
+                      <input type="text" name="schoolYear" value={formData.schoolYear || ''} onChange={handleInputChange} placeholder="e.g. 2025-2026" />
                     </div>
                     <div className="form-group full-width">
                       <label>Achievements</label>

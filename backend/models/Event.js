@@ -19,6 +19,41 @@ const eventSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
+    applications: [
+      {
+        user: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          required: true,
+        },
+        applicationStatus: {
+          type: String,
+          enum: ["Pending", "Approved", "Rejected"],
+          default: "Pending",
+        },
+        role: {
+          type: String,
+          default: "Participant",
+        },
+        applicationDate: {
+          type: Date,
+          default: Date.now,
+        },
+        reviewedBy: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          default: null,
+        },
+        reviewDate: {
+          type: Date,
+          default: null,
+        },
+        remarks: {
+          type: String,
+          default: "",
+        },
+      },
+    ],
   },
   { timestamps: true }
 );

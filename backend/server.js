@@ -9,6 +9,7 @@ const app = express();
 
 // Middleware
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
 // Routes
@@ -22,6 +23,9 @@ const facultyRoutes = require("./routes/facultyRoutes");
 const studentRoutes = require("./routes/studentRoutes");
 const profileRoutes = require("./routes/profileRoutes");
 const courseRoutes = require("./routes/courseRoutes");
+const medicalRecordRoutes = require("./routes/medicalRecordRoutes");
+const academicRoutes = require("./routes/academicRoutes");
+const classScheduleRoutes = require("./routes/classScheduleRoutes");
 const violationRoutes = require("./routes/violationRoutes");
 const violationTypeRoutes = require("./routes/violationTypeRoutes");
 const eventRoutes = require("./routes/eventRoutes");
@@ -31,6 +35,9 @@ app.use("/api/faculty", facultyRoutes);
 app.use("/api/students", studentRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/courses", courseRoutes);
+app.use("/api/medical-records", medicalRecordRoutes);
+app.use("/api/academic", academicRoutes);
+app.use("/api/class-schedules", classScheduleRoutes);
 app.use("/api/violations", violationRoutes);
 app.use("/api/violation-types", violationTypeRoutes);
 app.use("/api/events", eventRoutes);

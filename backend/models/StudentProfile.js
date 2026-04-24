@@ -30,6 +30,9 @@ const studentProfileSchema = new mongoose.Schema(
     yearLevel: {
       type: String,
     },
+    schoolYear: {
+      type: String,
+    },
     program: {
       type: String,
     },

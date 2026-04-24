@@ -127,10 +127,11 @@ const createViolation = async (req, res) => {
       reportedBy: req.user._id,
     });
 
-    const populated = await violation
-      .populate({ path: "student", select: "studentNumber firstName middleName lastName user", populate: { path: "user", select: "userId email name" } })
-      .populate("violationType")
-      .populate("reportedBy", "userId email name");
+    const populated = await violation.populate([
+      { path: "student", select: "studentNumber firstName middleName lastName user", populate: { path: "user", select: "userId email name" } },
+      { path: "violationType" },
+      { path: "reportedBy", select: "userId email name" },
+    ]);
 
     res.status(201).json(populated);
   } catch (error) {
@@ -169,10 +170,11 @@ const updateViolation = async (req, res) => {
     if (req.user?._id) violation.reportedBy = req.user._id;
 
     const updated = await violation.save();
-    const populated = await updated
-      .populate({ path: "student", select: "studentNumber firstName middleName lastName user", populate: { path: "user", select: "userId email name" } })
-      .populate("violationType")
-      .populate("reportedBy", "userId email name");
+    const populated = await updated.populate([
+      { path: "student", select: "studentNumber firstName middleName lastName user", populate: { path: "user", select: "userId email name" } },
+      { path: "violationType" },
+      { path: "reportedBy", select: "userId email name" },
+    ]);
 
     res.json(populated);
   } catch (error) {

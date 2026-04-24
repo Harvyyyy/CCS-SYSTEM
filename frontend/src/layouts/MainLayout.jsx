@@ -3,6 +3,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Calendar, 
+  CalendarRange,
   AlertTriangle, 
   Activity, 
   User, 
@@ -42,6 +43,7 @@ const ROLE_MENUS = {
   faculty: [
     { title: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { title: 'Schedule Management', path: '/schedule-management', icon: Clock },
+    { title: 'School Year & Sections', path: '/school-year-sections', icon: CalendarRange },
     { title: 'My Schedule', path: '/my-schedule', icon: Clock },
     { title: 'Course Management', path: '/course-management', icon: BookOpen },
     { title: 'Student Management', path: '/student-management', icon: Users },
@@ -57,6 +59,7 @@ const ROLE_MENUS = {
     { title: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { title: 'Faculty Management', path: '/faculty-management', icon: User },
     { title: 'Schedule Management', path: '/schedule-management', icon: Clock },
+    { title: 'School Year & Sections', path: '/school-year-sections', icon: CalendarRange },
     { title: 'Course Management', path: '/course-management', icon: BookOpen },
     { title: 'Student Management', path: '/student-management', icon: Users },
     { title: 'Event Management', path: '/event-management', icon: Calendar },
