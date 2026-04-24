@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Users, Calendar, Star, Search, Info, CheckCircle, Clock } from 'lucide-react';
+import axios from 'axios';
 import './MyAffiliation.css';
 
 const MyAffiliation = () => {
   const [activeTab, setActiveTab] = useState('current');
   const [searchTerm, setSearchTerm] = useState('');
+  const [exploreOrganizations, setExploreOrganizations] = useState([]);
 
-  // Mock Data
+  // Mock Data for current affiliations
   const currentAffiliations = [
     {
       id: 1,
@@ -16,41 +18,41 @@ const MyAffiliation = () => {
       status: 'Active',
       description: 'The official organization for Computer Science students focusing on tech workshops and community building.',
       adviser: 'Prof. Alan Turing'
-    },
-    {
-      id: 2,
-      orgName: 'Esports Club',
-      role: 'Officer',
-      joinDate: 'Jan 2025',
-      status: 'Active',
-      description: 'Competitive gaming club fielding teams for various collegiate esports tournaments.',
-      adviser: 'Mr. John Doe'
     }
   ];
 
-  const exploreOrganizations = [
-    {
-      id: 3,
-      orgName: 'Cybersecurity Guild',
-      category: 'Academic',
-      members: 45,
-      description: 'Dedicated to learning about ethical hacking, network security, and participating in CTF competitions.'
-    },
-    {
-      id: 4,
-      orgName: 'Web Development Group',
-      category: 'Technical',
-      members: 120,
-      description: 'A community driven by front-end and back-end web development practices and modern frameworks.'
-    },
-    {
-      id: 5,
-      orgName: 'Data Science Enthusiasts',
-      category: 'Academic',
-      members: 30,
-      description: 'Exploring machine learning, AI, and big data visualization through hands-on projects.'
+  const fetchClubs = async () => {
+    try {
+      const response = await axios.get('http://localhost:5000/api/clubs-orgs', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      // Map API data to component state
+      const orgs = response.data.map(org => ({
+        id: org._id,
+        orgName: org.name,
+        category: org.category,
+        members: org.membersCount || 0,
+        description: org.description,
+        lookingForMembers: org.lookingForMembers,
+        openPositions: org.openPositions
+      }));
+      setExploreOrganizations(orgs);
+    } catch (error) {
+      console.error('Error fetching clubs', error);
+      // Fallback
+      setExploreOrganizations([
+        {
+          id: 'temp1', orgName: 'Cybersecurity Guild', category: 'Academic', members: 45, 
+          description: 'Dedicated to learning about ethical hacking, network security, and participating in CTF competitions.',
+          lookingForMembers: false, openPositions: []
+        }
+      ]);
     }
-  ];
+  };
+
+  useEffect(() => {
+    fetchClubs();
+  }, []);
 
   const filteredExplore = exploreOrganizations.filter(org =>
     org.orgName.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -151,10 +153,26 @@ const MyAffiliation = () => {
                   </div>
                   <div className="org-card-body">
                     <p className="org-desc">{org.description}</p>
-                    <div className="detail-item">
+                    <div className="detail-item" style={{ marginBottom: '12px' }}>
                       <Users className="detail-icon" size={16} />
                       <span>{org.members} Members</span>
                     </div>
+
+                    {org.lookingForMembers && (
+                      <div className="hiring-banner" style={{ 
+                        marginTop: '12px', 
+                        padding: '8px 12px', 
+                        backgroundColor: 'var(--success-color-light, rgba(34, 197, 94, 0.1))',
+                        borderLeft: '3px solid var(--success-color, #22c55e)',
+                        borderRadius: '4px',
+                        fontSize: '13px'
+                      }}>
+                        <strong style={{ color: 'var(--success-color, #22c55e)', display: 'block', marginBottom: '4px' }}>Now Hiring / Looking For:</strong>
+                        <span style={{ color: 'var(--text-color)' }}>
+                          {org.openPositions?.length > 0 ? org.openPositions.join(', ') : 'Members'}
+                        </span>
+                      </div>
+                    )}
                   </div>
                   <div className="org-card-footer">
                     <button className="btn-primary">Apply to Join</button>
