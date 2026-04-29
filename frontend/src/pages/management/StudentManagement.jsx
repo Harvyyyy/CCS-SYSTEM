@@ -1,8 +1,11 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { Search, Plus, Edit2, Trash2, X, Filter, Users, Eye, LayoutGrid, List, BookOpen, Calendar as CalendarIcon, Mail, Phone, Code } from 'lucide-react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { Search, Plus, Edit2, Trash2, X, Filter, Users, Eye, LayoutGrid, List, BookOpen, Calendar as CalendarIcon, Mail, Phone, Code, FileText, Download, ChevronDown } from 'lucide-react';
 import axios from 'axios';
 import './StudentManagement.css';
 import MyProfile from '../student/MyProfile';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
 const DEFAULT_FORM_DATA = {
   userId: '',
@@ -228,6 +231,10 @@ const StudentManagement = () => {
   const [editingStudent, setEditingStudent] = useState(null);
 
   const [formData, setFormData] = useState(DEFAULT_FORM_DATA);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [previewFormat, setPreviewFormat] = useState(null);
+  const exportMenuRef = useRef(null);
 
   const availableSkills = useMemo(() => {
     const skillsSet = new Set();
@@ -377,6 +384,125 @@ const StudentManagement = () => {
     setSelectedStudent(null);
   };
 
+  const openPreviewModal = (format) => {
+    setPreviewFormat(format);
+    setIsPreviewModalOpen(true);
+    setShowExportMenu(false);
+  };
+
+  const closePreviewModal = () => {
+    setIsPreviewModalOpen(false);
+    setPreviewFormat(null);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
+        setShowExportMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const generatePDFReport = () => {
+    const doc = new jsPDF('l', 'mm', 'a4');
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    doc.setFontSize(16);
+    doc.text('Student Management Report', pageWidth / 2, 15, { align: 'center' });
+
+    doc.setFontSize(10);
+    const dateStr = new Date().toLocaleDateString('en-US', {
+      year: 'numeric', month: 'long', day: 'numeric'
+    });
+    doc.text(`Generated on: ${dateStr}`, pageWidth / 2, 22, { align: 'center' });
+
+    const filters = [];
+    if (statusFilter !== 'All') filters.push(`Status: ${statusFilter}`);
+    if (selectedSkills.length > 0) filters.push(`Skills: ${selectedSkills.join(', ')}`);
+    if (searchQuery) filters.push(`Search: "${searchQuery}"`);
+
+    if (filters.length > 0) {
+      doc.setFontSize(9);
+      doc.text(`Filters: ${filters.join(' | ')}`, 14, 28);
+    }
+
+    const tableData = filteredStudents.map(s => [
+      s.studentNumber || s.studentNo,
+      `${s.lastName}, ${s.firstName}${s.middleName ? ` ${s.middleName}` : ''}`,
+      s.program,
+      s.yearLevel,
+      s.section || '-',
+      s.academicStatus,
+      s.email || '-',
+      s.contactNumber || '-',
+      s.skills || '-'
+    ]);
+
+    autoTable(doc, {
+      head: [['Student No.', 'Name', 'Program', 'Year', 'Section', 'Status', 'Email', 'Contact', 'Skills']],
+      body: tableData,
+      startY: filters.length > 0 ? 32 : 28,
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [41, 98, 255], textColor: 255, fontSize: 9 },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+      columnStyles: {
+        0: { cellWidth: 25 },
+        1: { cellWidth: 40 },
+        2: { cellWidth: 20 },
+        3: { cellWidth: 20 },
+        4: { cellWidth: 20 },
+        5: { cellWidth: 20 },
+        6: { cellWidth: 45 },
+        7: { cellWidth: 25 },
+        8: { cellWidth: 'auto' }
+      }
+    });
+
+    doc.setFontSize(9);
+    const finalY = doc.lastAutoTable?.finalY || 40;
+    doc.text(`Total Records: ${filteredStudents.length}`, 14, finalY + 8);
+
+    doc.save(`student_report_${new Date().toISOString().split('T')[0]}.pdf`);
+    closePreviewModal();
+  };
+
+  const generateExcelReport = () => {
+    const data = filteredStudents.map(s => ({
+      'Student Number': s.studentNumber || s.studentNo,
+      'Last Name': s.lastName,
+      'First Name': s.firstName,
+      'Middle Name': s.middleName || '',
+      'Gender': s.gender,
+      'Program': s.program,
+      'Year Level': s.yearLevel,
+      'Section': s.section || '',
+      'Academic Status': s.academicStatus,
+      'Email': s.email || '',
+      'Contact Number': s.contactNumber || '',
+      'Emergency Contact': s.emergencyName || '',
+      'Emergency Number': s.emergencyNumber || '',
+      'Skills': s.skills || '',
+      'Interests': s.interests || ''
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+
+    const colWidths = [
+      { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 10 },
+      { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 15 }, { wch: 30 },
+      { wch: 15 }, { wch: 20 }, { wch: 15 }, { wch: 30 }, { wch: 30 }
+    ];
+    ws['!cols'] = colWidths;
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Student Report');
+
+    XLSX.writeFile(wb, `student_report_${new Date().toISOString().split('T')[0]}.xlsx`);
+    closePreviewModal();
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     const normalizedSkills = normalizeListField(formData.skills);
@@ -493,10 +619,34 @@ const StudentManagement = () => {
           </div>
           <p>Manage student profiles, section assignments, and enrollment status.</p>
         </div>
-        <button className="add-btn" onClick={() => openModal()}>
-          <Plus size={18} />
-          Add Student
-        </button>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <div className="export-dropdown" ref={exportMenuRef}>
+            <button
+              className="export-btn"
+              onClick={() => setShowExportMenu(!showExportMenu)}
+            >
+              <Download size={18} />
+              Export Report
+              <ChevronDown size={16} />
+            </button>
+            {showExportMenu && (
+              <div className="export-menu">
+                <button onClick={() => openPreviewModal('pdf')} className="export-option">
+                  <FileText size={16} />
+                  Preview & Export PDF
+                </button>
+                <button onClick={() => openPreviewModal('excel')} className="export-option">
+                  <FileText size={16} />
+                  Preview & Export Excel
+                </button>
+              </div>
+            )}
+          </div>
+          <button className="add-btn" onClick={() => openModal()}>
+            <Plus size={18} />
+            Add Student
+          </button>
+        </div>
       </div>
 
       <div className="sm-controls-bar">
@@ -1032,6 +1182,100 @@ const StudentManagement = () => {
               <div className="sm-detail-footer">
               <button type="button" className="btn-cancel" onClick={closeDetailModal}>
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isPreviewModalOpen && (
+        <div className="modal-overlay" onClick={closePreviewModal}>
+          <div className="modal-content preview-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div>
+                <h3>Report Preview - {previewFormat === 'pdf' ? 'PDF' : 'Excel'}</h3>
+                <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>
+                  {filteredStudents.length} records to export
+                </p>
+              </div>
+              <button className="close-btn" onClick={closePreviewModal}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="preview-body">
+              <div className="preview-info">
+                <div className="preview-info-item">
+                  <strong>Report Type:</strong> Student Management Report
+                </div>
+                <div className="preview-info-item">
+                  <strong>Generated:</strong> {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                </div>
+                <div className="preview-info-item">
+                  <strong>Total Records:</strong> {filteredStudents.length}
+                </div>
+                {(statusFilter !== 'All' || selectedSkills.length > 0 || searchQuery) && (
+                  <div className="preview-info-item">
+                    <strong>Applied Filters:</strong>
+                    <div className="preview-filters">
+                      {statusFilter !== 'All' && <span className="preview-filter-tag">Status: {statusFilter}</span>}
+                      {selectedSkills.length > 0 && <span className="preview-filter-tag">Skills: {selectedSkills.join(', ')}</span>}
+                      {searchQuery && <span className="preview-filter-tag">Search: &quot;{searchQuery}&quot;</span>}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="preview-table-container">
+                <table className="preview-table">
+                  <thead>
+                    <tr>
+                      <th>Student No.</th>
+                      <th>Name</th>
+                      <th>Program</th>
+                      <th>Year</th>
+                      <th>Section</th>
+                      <th>Status</th>
+                      <th>Email</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredStudents.slice(0, 10).map((student) => (
+                      <tr key={student.id}>
+                        <td>{student.studentNumber || student.studentNo}</td>
+                        <td>{`${student.lastName}, ${student.firstName}`}</td>
+                        <td>{student.program}</td>
+                        <td>{student.yearLevel}</td>
+                        <td>{student.section || '-'}</td>
+                        <td>
+                          <span className={`sm-status-badge ${student.academicStatus.toLowerCase()}`}>
+                            {student.academicStatus}
+                          </span>
+                        </td>
+                        <td>{student.email || '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {filteredStudents.length > 10 && (
+                  <div className="preview-more">
+                    + {filteredStudents.length - 10} more records...
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button type="button" className="btn-cancel" onClick={closePreviewModal}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn-submit"
+                onClick={previewFormat === 'pdf' ? generatePDFReport : generateExcelReport}
+              >
+                <Download size={16} style={{ marginRight: '6px' }} />
+                Download {previewFormat === 'pdf' ? 'PDF' : 'Excel'}
               </button>
             </div>
           </div>
