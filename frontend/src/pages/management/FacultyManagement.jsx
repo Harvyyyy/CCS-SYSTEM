@@ -1,10 +1,23 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Search, Plus, Edit2, Trash2, X, Filter, Users, Eye, LayoutGrid, List, BookOpen, Briefcase, Mail, Phone, Award, FileText, Download, ChevronDown } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, X, Filter, Users, Eye, LayoutGrid, List, BookOpen, Briefcase, Mail, Phone, Award, FileText, Download, ChevronDown, BarChart3, PieChart } from 'lucide-react';
 import axios from 'axios';
 import './FacultyManagement.css';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title
+} from 'chart.js';
+import { Pie, Bar } from 'react-chartjs-2';
+
+ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
 const DEFAULT_FORM_DATA = {
   userId: '',
@@ -270,6 +283,90 @@ const FacultyManagement = () => {
       return matchesSearch && matchesDepartment && matchesStatus && matchesRank;
     });
   }, [faculties, searchQuery, departmentFilter, statusFilter, rankFilter]);
+
+  // Chart data calculations
+  const statusChartData = useMemo(() => {
+    const counts = filteredFaculties.reduce((acc, f) => {
+      acc[f.status] = (acc[f.status] || 0) + 1;
+      return acc;
+    }, {});
+    return {
+      labels: Object.keys(counts),
+      datasets: [{
+        data: Object.values(counts),
+        backgroundColor: ['#22c55e', '#f59e0b', '#ef4444'],
+        borderWidth: 0
+      }]
+    };
+  }, [filteredFaculties]);
+
+  const deptChartData = useMemo(() => {
+    const counts = filteredFaculties.reduce((acc, f) => {
+      acc[f.department] = (acc[f.department] || 0) + 1;
+      return acc;
+    }, {});
+    return {
+      labels: Object.keys(counts),
+      datasets: [{
+        label: 'Faculty by Department',
+        data: Object.values(counts),
+        backgroundColor: ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b'],
+        borderWidth: 0
+      }]
+    };
+  }, [filteredFaculties]);
+
+  const rankChartData = useMemo(() => {
+    const counts = filteredFaculties.reduce((acc, f) => {
+      acc[f.academicRank] = (acc[f.academicRank] || 0) + 1;
+      return acc;
+    }, {});
+    return {
+      labels: Object.keys(counts),
+      datasets: [{
+        label: 'Faculty by Rank',
+        data: Object.values(counts),
+        backgroundColor: ['#6366f1', '#ec4899', '#14b8a6', '#f97316'],
+        borderWidth: 0
+      }]
+    };
+  }, [filteredFaculties]);
+
+  const chartStats = useMemo(() => {
+    const deptCounts = filteredFaculties.reduce((acc, f) => {
+      acc[f.department] = (acc[f.department] || 0) + 1;
+      return acc;
+    }, {});
+    const rankCounts = filteredFaculties.reduce((acc, f) => {
+      acc[f.academicRank] = (acc[f.academicRank] || 0) + 1;
+      return acc;
+    }, {});
+    const typeCounts = filteredFaculties.reduce((acc, f) => {
+      acc[f.employmentType] = (acc[f.employmentType] || 0) + 1;
+      return acc;
+    }, {});
+    return {
+      total: filteredFaculties.length,
+      departments: Object.keys(deptCounts).length,
+      ranks: Object.keys(rankCounts).length,
+      types: Object.keys(typeCounts).length
+    };
+  }, [filteredFaculties]);
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'bottom', labels: { boxWidth: 12, padding: 10, font: { size: 11 } } }
+    }
+  };
+
+  const barOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+  };
 
   const getStatusClass = (status) => {
     const s = status.toLowerCase();
@@ -937,7 +1034,60 @@ const FacultyManagement = () => {
                 )}
               </div>
 
+              {/* Charts Section */}
+              <div className="preview-charts-section">
+                <h4 className="preview-section-title">
+                  <BarChart3 size={18} style={{ marginRight: '8px' }} />
+                  Data Analytics
+                </h4>
+                <div className="preview-charts-grid">
+                  <div className="preview-chart-card">
+                    <h5>Status Distribution</h5>
+                    <div className="preview-chart-container pie">
+                      <Pie data={statusChartData} options={chartOptions} />
+                    </div>
+                  </div>
+                  <div className="preview-chart-card">
+                    <h5>Department Distribution</h5>
+                    <div className="preview-chart-container bar">
+                      <Bar data={deptChartData} options={barOptions} />
+                    </div>
+                  </div>
+                  <div className="preview-chart-card">
+                    <h5>Academic Rank Distribution</h5>
+                    <div className="preview-chart-container bar">
+                      <Bar data={rankChartData} options={barOptions} />
+                    </div>
+                  </div>
+                  <div className="preview-chart-card summary">
+                    <h5>Summary Statistics</h5>
+                    <div className="preview-stats">
+                      <div className="preview-stat-item">
+                        <span className="preview-stat-label">Total Faculty</span>
+                        <span className="preview-stat-value">{chartStats.total}</span>
+                      </div>
+                      <div className="preview-stat-item">
+                        <span className="preview-stat-label">Departments</span>
+                        <span className="preview-stat-value">{chartStats.departments}</span>
+                      </div>
+                      <div className="preview-stat-item">
+                        <span className="preview-stat-label">Academic Ranks</span>
+                        <span className="preview-stat-value">{chartStats.ranks}</span>
+                      </div>
+                      <div className="preview-stat-item">
+                        <span className="preview-stat-label">Employment Types</span>
+                        <span className="preview-stat-value">{chartStats.types}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div className="preview-table-container">
+                <h4 className="preview-section-title">
+                  <PieChart size={18} style={{ marginRight: '8px' }} />
+                  Data Preview (First 10 Records)
+                </h4>
                 <table className="preview-table">
                   <thead>
                     <tr>

@@ -1,11 +1,24 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Search, Plus, Edit2, Trash2, X, Filter, Users, Eye, LayoutGrid, List, BookOpen, Calendar as CalendarIcon, Mail, Phone, Code, FileText, Download, ChevronDown } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, X, Filter, Users, Eye, LayoutGrid, List, BookOpen, Calendar as CalendarIcon, Mail, Phone, Code, FileText, Download, ChevronDown, BarChart3, PieChart } from 'lucide-react';
 import axios from 'axios';
 import './StudentManagement.css';
 import MyProfile from '../student/MyProfile';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title
+} from 'chart.js';
+import { Pie, Bar } from 'react-chartjs-2';
+
+ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
 const DEFAULT_FORM_DATA = {
   userId: '',
@@ -603,6 +616,84 @@ const StudentManagement = () => {
       return matchesSearch && matchesStatus && matchesSkill;
     });
   }, [students, searchQuery, statusFilter, selectedSkills]);
+
+  // Chart data calculations
+  const statusChartData = useMemo(() => {
+    const counts = filteredStudents.reduce((acc, s) => {
+      acc[s.academicStatus] = (acc[s.academicStatus] || 0) + 1;
+      return acc;
+    }, {});
+    return {
+      labels: Object.keys(counts),
+      datasets: [{
+        data: Object.values(counts),
+        backgroundColor: ['#22c55e', '#f59e0b'],
+        borderWidth: 0
+      }]
+    };
+  }, [filteredStudents]);
+
+  const programChartData = useMemo(() => {
+    const counts = filteredStudents.reduce((acc, s) => {
+      acc[s.program] = (acc[s.program] || 0) + 1;
+      return acc;
+    }, {});
+    return {
+      labels: Object.keys(counts),
+      datasets: [{
+        label: 'Students by Program',
+        data: Object.values(counts),
+        backgroundColor: ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b'],
+        borderWidth: 0
+      }]
+    };
+  }, [filteredStudents]);
+
+  const yearChartData = useMemo(() => {
+    const counts = filteredStudents.reduce((acc, s) => {
+      acc[s.yearLevel] = (acc[s.yearLevel] || 0) + 1;
+      return acc;
+    }, {});
+    return {
+      labels: Object.keys(counts),
+      datasets: [{
+        label: 'Students by Year Level',
+        data: Object.values(counts),
+        backgroundColor: ['#6366f1', '#ec4899', '#14b8a6', '#f97316'],
+        borderWidth: 0
+      }]
+    };
+  }, [filteredStudents]);
+
+  const genderChartData = useMemo(() => {
+    const counts = filteredStudents.reduce((acc, s) => {
+      acc[s.gender] = (acc[s.gender] || 0) + 1;
+      return acc;
+    }, {});
+    return {
+      labels: Object.keys(counts),
+      datasets: [{
+        data: Object.values(counts),
+        backgroundColor: ['#3b82f6', '#ec4899', '#8b5cf6'],
+        borderWidth: 0
+      }]
+    };
+  }, [filteredStudents]);
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'bottom', labels: { boxWidth: 12, padding: 10, font: { size: 11 } } }
+    }
+  };
+
+  const barOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+  };
 
   return (
     <div className="student-management-container">
@@ -1226,7 +1317,45 @@ const StudentManagement = () => {
                 )}
               </div>
 
+              {/* Charts Section */}
+              <div className="preview-charts-section">
+                <h4 className="preview-section-title">
+                  <BarChart3 size={18} style={{ marginRight: '8px' }} />
+                  Data Analytics
+                </h4>
+                <div className="preview-charts-grid">
+                  <div className="preview-chart-card">
+                    <h5>Academic Status Distribution</h5>
+                    <div className="preview-chart-container pie">
+                      <Pie data={statusChartData} options={chartOptions} />
+                    </div>
+                  </div>
+                  <div className="preview-chart-card">
+                    <h5>Program Distribution</h5>
+                    <div className="preview-chart-container bar">
+                      <Bar data={programChartData} options={barOptions} />
+                    </div>
+                  </div>
+                  <div className="preview-chart-card">
+                    <h5>Year Level Distribution</h5>
+                    <div className="preview-chart-container bar">
+                      <Bar data={yearChartData} options={barOptions} />
+                    </div>
+                  </div>
+                  <div className="preview-chart-card">
+                    <h5>Gender Distribution</h5>
+                    <div className="preview-chart-container pie">
+                      <Pie data={genderChartData} options={chartOptions} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div className="preview-table-container">
+                <h4 className="preview-section-title">
+                  <PieChart size={18} style={{ marginRight: '8px' }} />
+                  Data Preview (First 10 Records)
+                </h4>
                 <table className="preview-table">
                   <thead>
                     <tr>
