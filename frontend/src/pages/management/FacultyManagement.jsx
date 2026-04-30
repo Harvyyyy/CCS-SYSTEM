@@ -1,7 +1,23 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { Search, Plus, Edit2, Trash2, X, Filter, Users, Eye, LayoutGrid, List, BookOpen, Briefcase, Mail, Phone, Award } from 'lucide-react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { Search, Plus, Edit2, Trash2, X, Filter, Users, Eye, LayoutGrid, List, BookOpen, Briefcase, Mail, Phone, Award, FileText, Download, ChevronDown, BarChart3, PieChart } from 'lucide-react';
 import axios from 'axios';
 import './FacultyManagement.css';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title
+} from 'chart.js';
+import { Pie, Bar } from 'react-chartjs-2';
+
+ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
 const DEFAULT_FORM_DATA = {
   userId: '',
@@ -99,6 +115,10 @@ const FacultyManagement = () => {
   const [editingFaculty, setEditingFaculty] = useState(null);
 
   const [formData, setFormData] = useState(DEFAULT_FORM_DATA);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [previewFormat, setPreviewFormat] = useState(null);
+  const exportMenuRef = useRef(null);
 
   const mapFaculty = (f) => {
     const user = f.user || {};
@@ -178,6 +198,17 @@ const FacultyManagement = () => {
     setSelectedFaculty(null);
   };
 
+  const openPreviewModal = (format) => {
+    setPreviewFormat(format);
+    setIsPreviewModalOpen(true);
+    setShowExportMenu(false);
+  };
+
+  const closePreviewModal = () => {
+    setIsPreviewModalOpen(false);
+    setPreviewFormat(null);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (editingFaculty) {
@@ -253,12 +284,203 @@ const FacultyManagement = () => {
     });
   }, [faculties, searchQuery, departmentFilter, statusFilter, rankFilter]);
 
+  // Chart data calculations
+  const statusChartData = useMemo(() => {
+    const counts = filteredFaculties.reduce((acc, f) => {
+      acc[f.status] = (acc[f.status] || 0) + 1;
+      return acc;
+    }, {});
+    return {
+      labels: Object.keys(counts),
+      datasets: [{
+        data: Object.values(counts),
+        backgroundColor: ['#22c55e', '#f59e0b', '#ef4444'],
+        borderWidth: 0
+      }]
+    };
+  }, [filteredFaculties]);
+
+  const deptChartData = useMemo(() => {
+    const counts = filteredFaculties.reduce((acc, f) => {
+      acc[f.department] = (acc[f.department] || 0) + 1;
+      return acc;
+    }, {});
+    return {
+      labels: Object.keys(counts),
+      datasets: [{
+        label: 'Faculty by Department',
+        data: Object.values(counts),
+        backgroundColor: ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b'],
+        borderWidth: 0
+      }]
+    };
+  }, [filteredFaculties]);
+
+  const rankChartData = useMemo(() => {
+    const counts = filteredFaculties.reduce((acc, f) => {
+      acc[f.academicRank] = (acc[f.academicRank] || 0) + 1;
+      return acc;
+    }, {});
+    return {
+      labels: Object.keys(counts),
+      datasets: [{
+        label: 'Faculty by Rank',
+        data: Object.values(counts),
+        backgroundColor: ['#6366f1', '#ec4899', '#14b8a6', '#f97316'],
+        borderWidth: 0
+      }]
+    };
+  }, [filteredFaculties]);
+
+  const chartStats = useMemo(() => {
+    const deptCounts = filteredFaculties.reduce((acc, f) => {
+      acc[f.department] = (acc[f.department] || 0) + 1;
+      return acc;
+    }, {});
+    const rankCounts = filteredFaculties.reduce((acc, f) => {
+      acc[f.academicRank] = (acc[f.academicRank] || 0) + 1;
+      return acc;
+    }, {});
+    const typeCounts = filteredFaculties.reduce((acc, f) => {
+      acc[f.employmentType] = (acc[f.employmentType] || 0) + 1;
+      return acc;
+    }, {});
+    return {
+      total: filteredFaculties.length,
+      departments: Object.keys(deptCounts).length,
+      ranks: Object.keys(rankCounts).length,
+      types: Object.keys(typeCounts).length
+    };
+  }, [filteredFaculties]);
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'bottom', labels: { boxWidth: 12, padding: 10, font: { size: 11 } } }
+    }
+  };
+
+  const barOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+  };
+
   const getStatusClass = (status) => {
     const s = status.toLowerCase();
     if (s === 'active') return 'active';
     if (s === 'on leave') return 'on-leave';
     if (s === 'resigned') return 'resigned';
     return '';
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
+        setShowExportMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const generatePDFReport = () => {
+    const doc = new jsPDF('l', 'mm', 'a4');
+    const pageWidth = doc.internal.pageSize.getWidth();
+    
+    doc.setFontSize(16);
+    doc.text('Faculty Management Report', pageWidth / 2, 15, { align: 'center' });
+    
+    doc.setFontSize(10);
+    const dateStr = new Date().toLocaleDateString('en-US', { 
+      year: 'numeric', month: 'long', day: 'numeric' 
+    });
+    doc.text(`Generated on: ${dateStr}`, pageWidth / 2, 22, { align: 'center' });
+    
+    const filters = [];
+    if (departmentFilter !== 'All') filters.push(`Department: ${departmentFilter}`);
+    if (statusFilter !== 'All') filters.push(`Status: ${statusFilter}`);
+    if (rankFilter !== 'All') filters.push(`Rank: ${rankFilter}`);
+    if (searchQuery) filters.push(`Search: "${searchQuery}"`);
+    
+    if (filters.length > 0) {
+      doc.setFontSize(9);
+      doc.text(`Filters: ${filters.join(' | ')}`, 14, 28);
+    }
+    
+    const tableData = filteredFaculties.map(f => [
+      f.employeeIdNumber || f.employeeId,
+      `${f.lastName}, ${f.firstName}${f.middleName ? ` ${f.middleName}` : ''}`,
+      f.department,
+      f.academicRank,
+      f.employmentType,
+      f.status,
+      f.email || '-',
+      f.contactNumber || '-',
+      f.specializations || '-'
+    ]);
+    
+    autoTable(doc, {
+      head: [['Employee ID', 'Name', 'Dept', 'Rank', 'Type', 'Status', 'Email', 'Contact', 'Specializations']],
+      body: tableData,
+      startY: filters.length > 0 ? 32 : 28,
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [41, 98, 255], textColor: 255, fontSize: 9 },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+      columnStyles: {
+        0: { cellWidth: 25 },
+        1: { cellWidth: 35 },
+        2: { cellWidth: 15 },
+        3: { cellWidth: 30 },
+        4: { cellWidth: 20 },
+        5: { cellWidth: 18 },
+        6: { cellWidth: 45 },
+        7: { cellWidth: 25 },
+        8: { cellWidth: 'auto' }
+      }
+    });
+    
+    doc.setFontSize(9);
+    const finalY = doc.lastAutoTable?.finalY || 40;
+    doc.text(`Total Records: ${filteredFaculties.length}`, 14, finalY + 8);
+    
+    doc.save(`faculty_report_${new Date().toISOString().split('T')[0]}.pdf`);
+    closePreviewModal();
+  };
+
+  const generateExcelReport = () => {
+    const data = filteredFaculties.map(f => ({
+      'Employee ID': f.employeeIdNumber || f.employeeId,
+      'Last Name': f.lastName,
+      'First Name': f.firstName,
+      'Middle Name': f.middleName || '',
+      'Gender': f.gender,
+      'Department': f.department,
+      'Position': f.position || '',
+      'Academic Rank': f.academicRank,
+      'Employment Type': f.employmentType,
+      'Status': f.status,
+      'Email': f.email || '',
+      'Contact Number': f.contactNumber || '',
+      'Specializations': f.specializations || ''
+    }));
+    
+    const ws = XLSX.utils.json_to_sheet(data);
+    
+    const colWidths = [
+      { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 10 },
+      { wch: 12 }, { wch: 20 }, { wch: 20 }, { wch: 15 }, { wch: 12 },
+      { wch: 30 }, { wch: 15 }, { wch: 40 }
+    ];
+    ws['!cols'] = colWidths;
+    
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Faculty Report');
+    
+    XLSX.writeFile(wb, `faculty_report_${new Date().toISOString().split('T')[0]}.xlsx`);
+    closePreviewModal();
   };
 
   return (
@@ -276,10 +498,34 @@ const FacultyManagement = () => {
           </div>
           <p>Manage faculty profiles, department assignments, and academic roles.</p>
         </div>
-        <button className="add-btn" onClick={() => openModal()}>
-          <Plus size={18} />
-          Add Faculty
-        </button>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <div className="export-dropdown" ref={exportMenuRef}>
+            <button 
+              className="export-btn" 
+              onClick={() => setShowExportMenu(!showExportMenu)}
+            >
+              <Download size={18} />
+              Export Report
+              <ChevronDown size={16} />
+            </button>
+            {showExportMenu && (
+              <div className="export-menu">
+                <button onClick={() => openPreviewModal('pdf')} className="export-option">
+                  <FileText size={16} />
+                  Preview & Export PDF
+                </button>
+                <button onClick={() => openPreviewModal('excel')} className="export-option">
+                  <FileText size={16} />
+                  Preview & Export Excel
+                </button>
+              </div>
+            )}
+          </div>
+          <button className="add-btn" onClick={() => openModal()}>
+            <Plus size={18} />
+            Add Faculty
+          </button>
+        </div>
       </div>
 
       <div className="fm-controls-bar">
@@ -743,6 +989,154 @@ const FacultyManagement = () => {
             <div className="fm-detail-footer">
               <button type="button" className="btn-cancel" onClick={closeDetailModal}>
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isPreviewModalOpen && (
+        <div className="modal-overlay" onClick={closePreviewModal}>
+          <div className="modal-content preview-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div>
+                <h3>Report Preview - {previewFormat === 'pdf' ? 'PDF' : 'Excel'}</h3>
+                <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>
+                  {filteredFaculties.length} records to export
+                </p>
+              </div>
+              <button className="close-btn" onClick={closePreviewModal}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="preview-body">
+              <div className="preview-info">
+                <div className="preview-info-item">
+                  <strong>Report Type:</strong> Faculty Management Report
+                </div>
+                <div className="preview-info-item">
+                  <strong>Generated:</strong> {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                </div>
+                <div className="preview-info-item">
+                  <strong>Total Records:</strong> {filteredFaculties.length}
+                </div>
+                {(departmentFilter !== 'All' || statusFilter !== 'All' || rankFilter !== 'All' || searchQuery) && (
+                  <div className="preview-info-item">
+                    <strong>Applied Filters:</strong>
+                    <div className="preview-filters">
+                      {departmentFilter !== 'All' && <span className="preview-filter-tag">Dept: {departmentFilter}</span>}
+                      {statusFilter !== 'All' && <span className="preview-filter-tag">Status: {statusFilter}</span>}
+                      {rankFilter !== 'All' && <span className="preview-filter-tag">Rank: {rankFilter}</span>}
+                      {searchQuery && <span className="preview-filter-tag">Search: &quot;{searchQuery}&quot;</span>}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Charts Section */}
+              <div className="preview-charts-section">
+                <h4 className="preview-section-title">
+                  <BarChart3 size={18} style={{ marginRight: '8px' }} />
+                  Data Analytics
+                </h4>
+                <div className="preview-charts-grid">
+                  <div className="preview-chart-card">
+                    <h5>Status Distribution</h5>
+                    <div className="preview-chart-container pie">
+                      <Pie data={statusChartData} options={chartOptions} />
+                    </div>
+                  </div>
+                  <div className="preview-chart-card">
+                    <h5>Department Distribution</h5>
+                    <div className="preview-chart-container bar">
+                      <Bar data={deptChartData} options={barOptions} />
+                    </div>
+                  </div>
+                  <div className="preview-chart-card">
+                    <h5>Academic Rank Distribution</h5>
+                    <div className="preview-chart-container bar">
+                      <Bar data={rankChartData} options={barOptions} />
+                    </div>
+                  </div>
+                  <div className="preview-chart-card summary">
+                    <h5>Summary Statistics</h5>
+                    <div className="preview-stats">
+                      <div className="preview-stat-item">
+                        <span className="preview-stat-label">Total Faculty</span>
+                        <span className="preview-stat-value">{chartStats.total}</span>
+                      </div>
+                      <div className="preview-stat-item">
+                        <span className="preview-stat-label">Departments</span>
+                        <span className="preview-stat-value">{chartStats.departments}</span>
+                      </div>
+                      <div className="preview-stat-item">
+                        <span className="preview-stat-label">Academic Ranks</span>
+                        <span className="preview-stat-value">{chartStats.ranks}</span>
+                      </div>
+                      <div className="preview-stat-item">
+                        <span className="preview-stat-label">Employment Types</span>
+                        <span className="preview-stat-value">{chartStats.types}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="preview-table-container">
+                <h4 className="preview-section-title">
+                  <PieChart size={18} style={{ marginRight: '8px' }} />
+                  Data Preview (First 10 Records)
+                </h4>
+                <table className="preview-table">
+                  <thead>
+                    <tr>
+                      <th>Employee ID</th>
+                      <th>Name</th>
+                      <th>Department</th>
+                      <th>Rank</th>
+                      <th>Type</th>
+                      <th>Status</th>
+                      <th>Email</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredFaculties.slice(0, 10).map((faculty) => (
+                      <tr key={faculty.id}>
+                        <td>{faculty.employeeIdNumber || faculty.employeeId}</td>
+                        <td>{`${faculty.lastName}, ${faculty.firstName}`}</td>
+                        <td>{faculty.department}</td>
+                        <td>{faculty.academicRank}</td>
+                        <td>{faculty.employmentType}</td>
+                        <td>
+                          <span className={`fm-status-badge ${getStatusClass(faculty.status)}`}>
+                            {faculty.status}
+                          </span>
+                        </td>
+                        <td>{faculty.email || '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {filteredFaculties.length > 10 && (
+                  <div className="preview-more">
+                    + {filteredFaculties.length - 10} more records...
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button type="button" className="btn-cancel" onClick={closePreviewModal}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn-submit"
+                onClick={previewFormat === 'pdf' ? generatePDFReport : generateExcelReport}
+              >
+                <Download size={16} style={{ marginRight: '6px' }} />
+                Download {previewFormat === 'pdf' ? 'PDF' : 'Excel'}
               </button>
             </div>
           </div>

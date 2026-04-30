@@ -1,6 +1,7 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
+const path = require("path");
 const connectDB = require("./config/db");
 
 dotenv.config();
@@ -11,6 +12,9 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
+
+// Static Files
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Routes
 app.get("/", (req, res) => {
@@ -31,6 +35,8 @@ const violationTypeRoutes = require("./routes/violationTypeRoutes");
 const eventRoutes = require("./routes/eventRoutes");
 const clubOrgRoutes = require("./routes/clubOrgRoutes");
 const gradeRoutes = require("./routes/gradeRoutes");
+const announcementRoutes = require("./routes/announcementRoutes");
+
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/faculty", facultyRoutes);
@@ -45,6 +51,7 @@ app.use("/api/violation-types", violationTypeRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/clubs-orgs", clubOrgRoutes);
 app.use("/api/grades", gradeRoutes);
+app.use("/api/announcements", announcementRoutes);
 
 const PORT = process.env.PORT || 5000;
 
